@@ -5,6 +5,7 @@ const TIME_SLOTS = [
   { time: '08:00:00', skill_level: 'amateur' },
   { time: '09:00:00', skill_level: 'expert' },
   { time: '10:00:00', skill_level: 'expert' },
+  { time: '11:00:00', skill_level: 'expert' },
 ]
 
 Deno.serve(async (_req) => {

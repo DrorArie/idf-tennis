@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 const SKILL_LABEL: Record<string, string> = {
   beginner: 'מתחיל (קבוצת 7:00)',
   amateur: 'חובבן (קבוצת 8:00)',
-  expert: 'מתקדם (קבוצת 9:00 ו-10:00)',
+  expert: 'מתקדם (קבוצת 9:00, 10:00 ו-11:00)',
 }
 
 const STATUS_LABEL: Record<string, string> = {

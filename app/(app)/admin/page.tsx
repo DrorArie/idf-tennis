@@ -9,6 +9,7 @@ const TIME_LABEL: Record<string, string> = {
   '08:00:00': '08:00',
   '09:00:00': '09:00',
   '10:00:00': '10:00',
+  '11:00:00': '11:00',
 }
 
 const SKILL_HE: Record<string, string> = {

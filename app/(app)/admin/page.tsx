@@ -15,7 +15,8 @@ const TIME_LABEL: Record<string, string> = {
 const SKILL_HE: Record<string, string> = {
   beginner: 'מתחילים',
   amateur: 'חובבנים',
-  expert: 'מתקדמים',
+  expert_a: 'מתקדמים א׳',
+  expert_b: 'מתקדמים ב׳',
 }
 
 function getThisWeekTuesday(): string {

@@ -3,9 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const TIME_SLOTS = [
   { time: '07:00:00', skill_level: 'beginner' },
   { time: '08:00:00', skill_level: 'amateur' },
-  { time: '09:00:00', skill_level: 'expert' },
-  { time: '10:00:00', skill_level: 'expert' },
-  { time: '11:00:00', skill_level: 'expert' },
+  { time: '09:00:00', skill_level: 'expert_a' },
+  { time: '10:00:00', skill_level: 'expert_b' },
 ]
 
 Deno.serve(async (_req) => {

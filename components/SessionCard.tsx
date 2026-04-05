@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 const SKILL_LABEL: Record<string, string> = {
   beginner: 'מתחילים',
   amateur: 'חובבנים',
-  expert: 'מתקדמים',
+  expert_a: 'מתקדמים א׳ (9:00-10:00)',
+  expert_b: 'מתקדמים ב׳ (10:00-11:00)',
 }
 
 const TIME_LABEL: Record<string, string> = {
@@ -13,7 +14,6 @@ const TIME_LABEL: Record<string, string> = {
   '08:00:00': '08:00',
   '09:00:00': '09:00',
   '10:00:00': '10:00',
-  '11:00:00': '11:00',
 }
 
 interface Session {

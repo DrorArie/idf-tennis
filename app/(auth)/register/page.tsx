@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 const SKILL_LEVELS = [
   { value: 'beginner', label: 'מתחיל (קבוצת 7:00)' },
   { value: 'amateur', label: 'חובבן (קבוצת 8:00)' },
-  { value: 'expert', label: 'מתקדם (קבוצת 9:00, 10:00 או 11:00)' },
+  { value: 'expert_a', label: 'מתקדם א׳ (קבוצת 9:00-10:00)' },
+  { value: 'expert_b', label: 'מתקדם ב׳ (קבוצת 10:00-11:00)' },
 ]
 
 export default function RegisterPage() {

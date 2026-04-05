@@ -6,7 +6,8 @@ import { redirect } from 'next/navigation'
 const SKILL_LABEL: Record<string, string> = {
   beginner: 'מתחיל (קבוצת 7:00)',
   amateur: 'חובבן (קבוצת 8:00)',
-  expert: 'מתקדם (קבוצת 9:00, 10:00 ו-11:00)',
+  expert_a: 'מתקדם א׳ (קבוצת 9:00-10:00)',
+  expert_b: 'מתקדם ב׳ (קבוצת 10:00-11:00)',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -91,7 +92,7 @@ export default async function ProfilePage() {
                   })}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {({ beginner: 'מתחילים', amateur: 'חובבנים', expert: 'מתקדמים' } as Record<string,string>)[reg.sessions?.skill_level] ?? reg.sessions?.skill_level}
+                  {({ beginner: 'מתחילים', amateur: 'חובבנים', expert_a: 'מתקדמים א׳', expert_b: 'מתקדמים ב׳' } as Record<string,string>)[reg.sessions?.skill_level] ?? reg.sessions?.skill_level}
                 </p>
               </div>
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${

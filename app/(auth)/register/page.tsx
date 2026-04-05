@@ -89,7 +89,7 @@ export default function RegisterPage() {
         <input
           type="text" required value={form.name}
           onChange={(e) => set('name', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
       </div>
 
@@ -98,7 +98,7 @@ export default function RegisterPage() {
         <input
           type="email" required value={form.email}
           onChange={(e) => set('email', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
       </div>
 
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         <input
           type="tel" required value={form.phone}
           onChange={(e) => set('phone', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
       </div>
 
@@ -118,7 +118,7 @@ export default function RegisterPage() {
           value={form.idf_number}
           onChange={(e) => set('idf_number', e.target.value.replace(/\D/g, ''))}
           placeholder="7 ספרות"
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
         <p className="text-xs text-gray-500 mt-1">המספר האישי שלך בצבא (7 ספרות בלבד)</p>
       </div>
@@ -128,7 +128,7 @@ export default function RegisterPage() {
         <select
           required value={form.skill_level}
           onChange={(e) => set('skill_level', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         >
           <option value="">בחר רמה</option>
           {SKILL_LEVELS.map(({ value, label }) => (
@@ -142,7 +142,7 @@ export default function RegisterPage() {
         <input
           type="password" required value={form.password}
           onChange={(e) => set('password', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
       </div>
 
@@ -151,7 +151,7 @@ export default function RegisterPage() {
         <input
           type="password" required value={form.confirm_password}
           onChange={(e) => set('confirm_password', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
         />
       </div>
 

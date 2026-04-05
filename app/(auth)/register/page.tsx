@@ -61,16 +61,21 @@ export default function RegisterPage() {
       return
     }
 
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: authData.user.id,
-      name: form.name,
-      phone: form.phone,
-      idf_number: form.idf_number,
-      skill_level: form.skill_level,
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: authData.user.id,
+        name: form.name,
+        phone: form.phone,
+        idf_number: form.idf_number,
+        skill_level: form.skill_level,
+      }),
     })
 
-    if (profileError) {
-      setError(profileError.message)
+    if (!res.ok) {
+      const data = await res.json()
+      setError(data.error ?? 'שגיאה ביצירת הפרופיל')
       setLoading(false)
       return
     }

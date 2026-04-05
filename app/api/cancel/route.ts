@@ -60,8 +60,7 @@ export async function POST(req: NextRequest) {
       // Send in-app notification
       await supabase.from('notifications').insert({
         user_id: nextWaiting.user_id,
-        message:
-          'A spot opened up in your session! Open the app to confirm your registration. You have 1 hour.',
+        message: 'התפנה מקום באימון שלך! פתח את האפליקציה ואשר את הרשמתך. יש לך שעה.',
       })
     }
   }

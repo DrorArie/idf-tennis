@@ -92,11 +92,11 @@ export default function NotificationBell({ userId }: { userId: string }) {
           />
           <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-96 overflow-y-auto">
             <div className="p-3 border-b border-gray-100 sticky top-0 bg-white">
-              <p className="text-sm font-semibold text-gray-800">Notifications</p>
+              <p className="text-sm font-semibold text-gray-800">התראות</p>
             </div>
             {notifications.length === 0 ? (
               <p className="text-sm text-gray-500 p-6 text-center">
-                No notifications yet
+                אין התראות עדיין
               </p>
             ) : (
               notifications.map((n) => (

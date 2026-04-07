@@ -21,8 +21,12 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles').select('*').eq('id', user.id).single()
+
+  console.log('user.id:', user.id)
+  console.log('profile:', profile)
+  console.log('profileError:', profileError)
 
   const { data: myRegistrations } = await supabase
     .from('registrations')

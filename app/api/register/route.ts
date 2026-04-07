@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'רמת משחק לא תקינה' }, { status: 400 })
   }
 
+  console.log('Inserting profile for userId:', userId)
+
   const { error } = await supabaseAdmin.from('profiles').insert({
     id: userId,
     name,
@@ -32,8 +34,10 @@ export async function POST(req: NextRequest) {
   })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    console.error('Profile insert error:', error)
+    return NextResponse.json({ error: error.message, details: error }, { status: 400 })
   }
 
+  console.log('Profile created successfully for:', userId)
   return NextResponse.json({ success: true })
 }

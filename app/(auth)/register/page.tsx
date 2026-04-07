@@ -23,7 +23,6 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -75,29 +74,13 @@ export default function RegisterPage() {
 
     const data = await res.json()
     if (!res.ok) {
-      setError(JSON.stringify(data))
+      setError(data.error ?? 'שגיאה ביצירת הפרופיל')
       setLoading(false)
       return
     }
 
-    setDone(true)
-  }
-
-  if (done) {
-    return (
-      <div className="text-center space-y-4">
-        <div className="text-5xl">📧</div>
-        <h2 className="text-xl font-bold text-gray-900">בדוק את האימייל שלך!</h2>
-        <p className="text-gray-600 text-sm leading-relaxed">
-          שלחנו לך אימייל לאישור הכתובת.<br />
-          לחץ על הקישור באימייל כדי להשלים את ההרשמה ולהיכנס לאפליקציה.
-        </p>
-        <p className="text-xs text-gray-400">לא קיבלת? בדוק את תיקיית הספאם.</p>
-        <Link href="/login" className="block text-sm text-blue-600 hover:underline mt-4">
-          חזרה לכניסה
-        </Link>
-      </div>
-    )
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (

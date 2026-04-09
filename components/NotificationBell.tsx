@@ -90,7 +90,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
             className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-10 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-96 overflow-y-auto">
+          <div dir="rtl" className="absolute left-0 top-10 w-72 bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-96 overflow-y-auto">
             <div className="p-3 border-b border-gray-100 sticky top-0 bg-white">
               <p className="text-sm font-semibold text-gray-800">התראות</p>
             </div>

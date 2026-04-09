@@ -44,7 +44,8 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-red-50 p-3 rounded text-xs text-red-800 break-all">
+      <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '8px', fontSize: '11px', color: '#991b1b', wordBreak: 'break-all', border: '2px solid red' }}>
+        <strong>DEBUG v2</strong><br/>
         user.id: {user.id}<br/>
         profile: {JSON.stringify(profile)}<br/>
         error: {JSON.stringify(profileError)}

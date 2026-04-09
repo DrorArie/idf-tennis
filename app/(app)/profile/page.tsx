@@ -44,6 +44,11 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5">
+      <div className="bg-red-50 p-3 rounded text-xs text-red-800 break-all">
+        user.id: {user.id}<br/>
+        profile: {JSON.stringify(profile)}<br/>
+        error: {JSON.stringify(profileError)}
+      </div>
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-4 mb-5">
           <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600">

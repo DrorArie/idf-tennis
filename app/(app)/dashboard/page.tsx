@@ -25,10 +25,10 @@ function getThisWeekTuesday(): string {
   return `${y}-${m}-${d}`
 }
 
-// Exercise is always Thursday = Tuesday + 2 days
+// Exercise is always Friday = Tuesday + 3 days
 function getExerciseDate(weekStart: string): Date {
   const [y, m, d] = weekStart.split('-').map(Number)
-  return new Date(y, m - 1, d + 2)
+  return new Date(y, m - 1, d + 3)
 }
 
 export default async function DashboardPage() {

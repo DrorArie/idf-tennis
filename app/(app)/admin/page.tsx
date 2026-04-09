@@ -23,10 +23,13 @@ function getThisWeekTuesday(): string {
   const now = new Date()
   const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
   const day = israelTime.getDay()
-  const daysUntilTuesday = (2 - day + 7) % 7
+  const daysSinceTuesday = (day - 2 + 7) % 7
   const tuesday = new Date(israelTime)
-  tuesday.setDate(israelTime.getDate() + daysUntilTuesday)
-  return tuesday.toISOString().split('T')[0]
+  tuesday.setDate(israelTime.getDate() - daysSinceTuesday)
+  const y = tuesday.getFullYear()
+  const m = String(tuesday.getMonth() + 1).padStart(2, '0')
+  const d = String(tuesday.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 export default async function AdminPage() {

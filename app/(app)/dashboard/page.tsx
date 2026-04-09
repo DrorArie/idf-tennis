@@ -4,14 +4,31 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SessionCard from '@/components/SessionCard'
 
+const SKILL_LABEL: Record<string, string> = {
+  beginner: 'מתחילים (7:00)',
+  amateur: 'חובבנים (8:00)',
+  expert_a: 'מתקדמים א׳ (9:00)',
+  expert_b: 'מתקדמים ב׳ (10:00)',
+}
+
+// Returns the most recent past Tuesday (or today if today is Tuesday)
 function getThisWeekTuesday(): string {
   const now = new Date()
   const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
-  const day = israelTime.getDay()
-  const daysUntilTuesday = (2 - day + 7) % 7
+  const day = israelTime.getDay() // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  const daysSinceTuesday = (day - 2 + 7) % 7
   const tuesday = new Date(israelTime)
-  tuesday.setDate(israelTime.getDate() + daysUntilTuesday)
-  return tuesday.toISOString().split('T')[0]
+  tuesday.setDate(israelTime.getDate() - daysSinceTuesday)
+  const y = tuesday.getFullYear()
+  const m = String(tuesday.getMonth() + 1).padStart(2, '0')
+  const d = String(tuesday.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// Exercise is always Thursday = Tuesday + 2 days
+function getExerciseDate(weekStart: string): Date {
+  const [y, m, d] = weekStart.split('-').map(Number)
+  return new Date(y, m - 1, d + 2)
 }
 
 export default async function DashboardPage() {
@@ -23,6 +40,10 @@ export default async function DashboardPage() {
     .from('profiles').select('skill_level').eq('id', user.id).single()
 
   const weekStart = getThisWeekTuesday()
+  const exerciseDate = getExerciseDate(weekStart)
+  const exerciseDateStr = exerciseDate.toLocaleDateString('he-IL', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  })
 
   const { data: sessions } = await supabase
     .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
@@ -45,16 +66,45 @@ export default async function DashboardPage() {
 
   const myRegMap = Object.fromEntries((myRegistrations ?? []).map((r) => [r.session_id, r]))
 
-  const weekDateStr = new Date(weekStart + 'T00:00:00').toLocaleDateString('he-IL', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
+  // Find user's registration for their own skill group
+  const mySkillSession = (sessions ?? []).find(s => s.skill_level === profile?.skill_level)
+  const mySkillReg = mySkillSession ? myRegMap[mySkillSession.id] : null
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-gray-900">אימוני השבוע</h2>
-        <p className="text-sm text-gray-500">שבוע של {weekDateStr}</p>
+        <h2 className="text-xl font-bold text-gray-900">אימון השבוע</h2>
+        <p className="text-sm text-gray-500">{exerciseDateStr}</p>
       </div>
+
+      {/* Registration status banner */}
+      {mySkillReg?.status === 'confirmed' && (
+        <div className="bg-green-500 text-white rounded-2xl p-5 text-center shadow-md">
+          <p className="text-4xl mb-2">✓</p>
+          <p className="text-xl font-bold">נרשמת לאימון!</p>
+          <p className="text-sm opacity-90 mt-1">
+            {SKILL_LABEL[profile?.skill_level ?? '']} · {exerciseDateStr}
+          </p>
+        </div>
+      )}
+
+      {mySkillReg?.status === 'waitlist' && (
+        <div className="bg-yellow-400 text-yellow-900 rounded-2xl p-5 text-center shadow-md">
+          <p className="text-4xl mb-2">⏳</p>
+          <p className="text-xl font-bold">ברשימת המתנה #{mySkillReg.waitlist_position}</p>
+          <p className="text-sm opacity-80 mt-1">
+            {SKILL_LABEL[profile?.skill_level ?? '']} · {exerciseDateStr}
+          </p>
+        </div>
+      )}
+
+      {mySkillReg?.status === 'pending_confirmation' && (
+        <div className="bg-orange-400 text-white rounded-2xl p-5 text-center shadow-md animate-pulse">
+          <p className="text-4xl mb-2">⚠️</p>
+          <p className="text-xl font-bold">יש לך מקום! אשר עכשיו</p>
+          <p className="text-sm opacity-90 mt-1">לחץ על כפתור האישור למטה — יש לך שעה</p>
+        </div>
+      )}
 
       {(sessions ?? []).length === 0 ? (
         <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">

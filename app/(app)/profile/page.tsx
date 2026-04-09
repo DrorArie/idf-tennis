@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 const SKILL_LABEL: Record<string, string> = {
   beginner: 'מתחיל (קבוצת 7:00)',
@@ -31,6 +32,18 @@ export default async function ProfilePage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
+  async function updateSkillLevel(formData: FormData) {
+    'use server'
+    const skill_level = formData.get('skill_level') as string
+    const valid = ['beginner', 'amateur', 'expert_a', 'expert_b']
+    if (!valid.includes(skill_level)) return
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('profiles').update({ skill_level }).eq('id', user.id)
+    revalidatePath('/profile')
+  }
+
   async function signOut() {
     'use server'
     const supabase = await createClient()
@@ -47,7 +60,19 @@ export default async function ProfilePage() {
           </div>
           <div>
             <p className="font-bold text-gray-900 text-lg">{profile?.name}</p>
-            <p className="text-sm text-gray-500">{SKILL_LABEL[profile?.skill_level ?? '']}</p>
+            <form action={updateSkillLevel} className="flex items-center gap-2 mt-0.5">
+              <select
+                name="skill_level"
+                defaultValue={profile?.skill_level ?? ''}
+                className="text-sm text-gray-500 border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-1 cursor-pointer"
+              >
+                <option value="beginner">מתחיל (קבוצת 7:00)</option>
+                <option value="amateur">חובבן (קבוצת 8:00)</option>
+                <option value="expert_a">מתקדם א׳ (קבוצת 9:00)</option>
+                <option value="expert_b">מתקדם ב׳ (קבוצת 10:00)</option>
+              </select>
+              <button type="submit" className="text-xs text-blue-500 hover:text-blue-700 font-medium">שמור</button>
+            </form>
           </div>
         </div>
 

@@ -113,38 +113,33 @@ export default function SessionCard({ session, myRegistration, userSkillLevel }:
             </div>
           </div>
 
-          {myRegistration ? (
-            <div className="space-y-2">
-              {myRegistration.status === 'pending_confirmation' && (
+          {isMyLevel ? (
+            myRegistration ? (
+              <div className="space-y-2">
+                {myRegistration.status === 'pending_confirmation' && (
+                  <button
+                    onClick={handleSignUp} disabled={loading}
+                    className="w-full bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {loading ? 'מאשר...' : 'אשר את מקומי'}
+                  </button>
+                )}
                 <button
-                  onClick={handleSignUp} disabled={loading}
-                  className="w-full bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  onClick={handleCancel} disabled={loading}
+                  className="w-full border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? 'מאשר...' : 'אשר את מקומי'}
+                  {loading ? '...' : 'ביטול הרשמה'}
                 </button>
-              )}
+              </div>
+            ) : (
               <button
-                onClick={handleCancel} disabled={loading}
-                className="w-full border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
-              >
-                {loading ? '...' : 'ביטול הרשמה'}
-              </button>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={handleSignUp} disabled={loading || !isMyLevel}
+                onClick={handleSignUp} disabled={loading}
                 className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
                 {loading ? 'רגע...' : spotsLeft > 0 ? 'הרשמה' : 'הצטרפות לרשימת המתנה'}
               </button>
-              {!isMyLevel && (
-                <p className="text-xs text-gray-400 text-center mt-2">
-                  האימון הזה מיועד ל{SKILL_LABEL[session.skill_level]} בלבד
-                </p>
-              )}
-            </>
-          )}
+            )
+          ) : null}
         </>
       )}
     </div>

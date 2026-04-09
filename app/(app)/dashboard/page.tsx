@@ -44,6 +44,10 @@ export default async function DashboardPage() {
   const exerciseDateStr = exerciseDate.toLocaleDateString('he-IL', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
+  const todayStr = new Date().toLocaleDateString('he-IL', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'Asia/Jerusalem',
+  })
 
   const { data: sessions } = await supabase
     .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
@@ -74,7 +78,8 @@ export default async function DashboardPage() {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-bold text-gray-900">אימון השבוע</h2>
-        <p className="text-sm text-gray-500">{exerciseDateStr}</p>
+        <p className="text-sm font-medium text-gray-700">{exerciseDateStr}</p>
+        <p className="text-xs text-gray-400 mt-0.5">היום: {todayStr}</p>
       </div>
 
       {/* Registration status banner */}

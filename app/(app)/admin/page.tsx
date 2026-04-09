@@ -85,6 +85,33 @@ export default async function AdminPage() {
     .select('id, name, phone, idf_number, skill_level, total_signups, is_blacklisted, is_admin')
     .order('total_signups', { ascending: false })
 
+  async function openWeekSessions() {
+    'use server'
+    const { createClient: createAdmin } = await import('@supabase/supabase-js')
+    const admin = createAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const now = new Date()
+    const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
+    const day = israelTime.getDay()
+    const daysSinceTuesday = (day - 2 + 7) % 7
+    const tuesday = new Date(israelTime)
+    tuesday.setDate(israelTime.getDate() - daysSinceTuesday)
+    const y = tuesday.getFullYear()
+    const m = String(tuesday.getMonth() + 1).padStart(2, '0')
+    const d = String(tuesday.getDate()).padStart(2, '0')
+    const ws = `${y}-${m}-${d}`
+    await admin.from('sessions').upsert([
+      { week_start: ws, time_slot: '07:00:00', skill_level: 'beginner', capacity: 8, is_open: true },
+      { week_start: ws, time_slot: '08:00:00', skill_level: 'amateur', capacity: 8, is_open: true },
+      { week_start: ws, time_slot: '09:00:00', skill_level: 'expert_a', capacity: 8, is_open: true },
+      { week_start: ws, time_slot: '10:00:00', skill_level: 'expert_b', capacity: 8, is_open: true },
+    ], { onConflict: 'week_start,time_slot' })
+    revalidatePath('/admin')
+    revalidatePath('/dashboard')
+  }
+
   async function toggleBlacklist(formData: FormData) {
     'use server'
     const userId = formData.get('userId') as string
@@ -100,9 +127,19 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">לוח ניהול</h2>
-        <p className="text-sm text-gray-500">שבוע של {weekDateStr}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">לוח ניהול</h2>
+          <p className="text-sm text-gray-500">שבוע של {weekDateStr}</p>
+        </div>
+        <form action={openWeekSessions}>
+          <button
+            type="submit"
+            className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            {(sessions ?? []).length > 0 ? '🔄 אפס השבוע' : '🟢 פתח השבוע'}
+          </button>
+        </form>
       </div>
 
       <section>

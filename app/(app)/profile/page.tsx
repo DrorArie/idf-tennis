@@ -24,10 +24,6 @@ export default async function ProfilePage() {
   const { data: profile, error: profileError } = await supabase
     .from('profiles').select('*').eq('id', user.id).single()
 
-  console.log('user.id:', user.id)
-  console.log('profile:', profile)
-  console.log('profileError:', profileError)
-
   const { data: myRegistrations } = await supabase
     .from('registrations')
     .select('id, status, waitlist_position, created_at, sessions(time_slot, week_start, skill_level)')
@@ -44,12 +40,6 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5">
-      <div style={{ background: '#fee2e2', padding: '12px', borderRadius: '8px', fontSize: '11px', color: '#991b1b', wordBreak: 'break-all', border: '2px solid red' }}>
-        <strong>DEBUG v2</strong><br/>
-        user.id: {user.id}<br/>
-        profile: {JSON.stringify(profile)}<br/>
-        error: {JSON.stringify(profileError)}
-      </div>
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
         <div className="flex items-center gap-4 mb-5">
           <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600">

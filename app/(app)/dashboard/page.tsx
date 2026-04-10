@@ -118,14 +118,16 @@ export default async function DashboardPage() {
           <p className="text-sm text-gray-400 mt-1">המקומות נפתחים אוטומטית כל יום שלישי בשעה 12:00</p>
         </div>
       ) : (
-        (sessions ?? []).map((session) => (
-          <SessionCard
-            key={session.id}
-            session={{ ...session, confirmed_count: countMap[session.id] ?? 0 }}
-            myRegistration={myRegMap[session.id] ?? null}
-            userSkillLevel={profile?.skill_level ?? ''}
-          />
-        ))
+        (sessions ?? [])
+          .filter((session) => session.skill_level === profile?.skill_level)
+          .map((session) => (
+            <SessionCard
+              key={session.id}
+              session={{ ...session, confirmed_count: countMap[session.id] ?? 0 }}
+              myRegistration={myRegMap[session.id] ?? null}
+              userSkillLevel={profile?.skill_level ?? ''}
+            />
+          ))
       )}
     </div>
   )

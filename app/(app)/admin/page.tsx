@@ -121,8 +121,10 @@ export default async function AdminPage() {
     revalidatePath('/admin')
   }
 
-  const weekDateStr = new Date(weekStart + 'T00:00:00').toLocaleDateString('he-IL', {
-    day: 'numeric', month: 'long', year: 'numeric',
+  const [wy, wm, wd] = weekStart.split('-').map(Number)
+  const exerciseDate = new Date(wy, wm - 1, wd + 3)
+  const weekDateStr = exerciseDate.toLocaleDateString('he-IL', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
   return (

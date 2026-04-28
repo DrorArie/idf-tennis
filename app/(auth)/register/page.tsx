@@ -18,6 +18,7 @@ export default function RegisterPage() {
     phone: '',
     idf_number: '',
     skill_level: '',
+    service_type: '',
     password: '',
     confirm_password: '',
   })
@@ -46,6 +47,10 @@ export default function RegisterPage() {
       setError('סיסמה חייבת להכיל לפחות 6 תווים')
       return
     }
+    if (!form.service_type) {
+      setError('יש לבחור סוג שירות')
+      return
+    }
 
     setLoading(true)
 
@@ -69,6 +74,8 @@ export default function RegisterPage() {
         phone: form.phone,
         idf_number: form.idf_number,
         skill_level: form.skill_level,
+        service_type: form.service_type,
+        email: form.email,
       }),
     })
 
@@ -140,6 +147,19 @@ export default function RegisterPage() {
           {SKILL_LEVELS.map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>
           ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">סוג שירות</label>
+        <select
+          required value={form.service_type}
+          onChange={(e) => set('service_type', e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+        >
+          <option value="">בחר סוג שירות</option>
+          <option value="keva">קבע</option>
+          <option value="ezrach">אזרח עובד צה"ל</option>
         </select>
       </div>
 

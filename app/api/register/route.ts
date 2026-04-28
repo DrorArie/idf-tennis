@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Uses service role key to bypass RLS — safe because we validate the data here
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 export async function POST(req: NextRequest) {
-  const { userId, name, phone, idf_number, skill_level } = await req.json()
+  const { userId, name, phone, idf_number, skill_level, service_type, email } = await req.json()
 
-  if (!userId || !name || !phone || !idf_number || !skill_level) {
+  if (!userId || !name || !phone || !idf_number || !skill_level || !service_type || !email) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
   }
 
@@ -23,7 +22,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'רמת משחק לא תקינה' }, { status: 400 })
   }
 
-  console.log('Inserting profile for userId:', userId)
+  if (!['keva', 'ezrach'].includes(service_type)) {
+    return NextResponse.json({ error: 'סוג שירות לא תקין' }, { status: 400 })
+  }
 
   const { error } = await supabaseAdmin.from('profiles').insert({
     id: userId,
@@ -31,13 +32,14 @@ export async function POST(req: NextRequest) {
     phone,
     idf_number,
     skill_level,
+    service_type,
+    email,
   })
 
   if (error) {
     console.error('Profile insert error:', error)
-    return NextResponse.json({ error: error.message, details: error }, { status: 400 })
+    return NextResponse.json({ error: error.message }, { status: 400 })
   }
 
-  console.log('Profile created successfully for:', userId)
   return NextResponse.json({ success: true })
 }

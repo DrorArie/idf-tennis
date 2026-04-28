@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
       }
     }
   } else if (reg.status === 'waitlist') {
-    const cancelledPos = reg.waitlist_position!
+    if (!reg.waitlist_position) return NextResponse.json({ error: 'Invalid waitlist state' }, { status: 500 })
+    const cancelledPos = reg.waitlist_position
     await supabase.from('registrations').delete().eq('id', reg.id)
 
     // Shift down everyone who was behind the cancelled position

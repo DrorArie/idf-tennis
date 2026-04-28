@@ -103,15 +103,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {mySkillReg?.status === 'pending_confirmation' && (
-        <div className="bg-orange-400 text-white rounded-2xl p-5 text-center shadow-md animate-pulse">
-          <p className="text-4xl mb-2">⚠️</p>
-          <p className="text-xl font-bold">יש לך מקום! אשר עכשיו</p>
-          <p className="text-sm opacity-90 mt-1">לחץ על כפתור האישור למטה — יש לך שעה</p>
-        </div>
-      )}
-
-      {(sessions ?? []).length === 0 ? (
+{(sessions ?? []).length === 0 ? (
         <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">
           <p className="text-4xl mb-3">🎾</p>
           <p className="text-gray-600 font-medium">עדיין אין אימונים השבוע</p>

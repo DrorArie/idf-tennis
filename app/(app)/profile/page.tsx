@@ -14,7 +14,6 @@ const SKILL_LABEL: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   confirmed: 'רשום',
   waitlist: 'המתנה',
-  pending_confirmation: 'ממתין לאישור',
 }
 
 export default async function ProfilePage() {
@@ -121,9 +120,7 @@ export default async function ProfilePage() {
                 </p>
               </div>
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                reg.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                reg.status === 'waitlist' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-orange-100 text-orange-700'
+                reg.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
               }`}>
                 {reg.status === 'waitlist' ? `המתנה #${reg.waitlist_position}` : STATUS_LABEL[reg.status] ?? reg.status}
               </span>

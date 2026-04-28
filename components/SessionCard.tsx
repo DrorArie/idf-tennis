@@ -68,13 +68,9 @@ export default function SessionCard({ session, myRegistration, userSkillLevel }:
   const statusBadge = myRegistration ? (
     myRegistration.status === 'confirmed' ? (
       <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">✓ רשום</span>
-    ) : myRegistration.status === 'waitlist' ? (
+    ) : (
       <span className="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">
         המתנה #{myRegistration.waitlist_position}
-      </span>
-    ) : (
-      <span className="text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full font-medium animate-pulse">
-        ⚠ אשר עכשיו!
       </span>
     )
   ) : null
@@ -115,22 +111,12 @@ export default function SessionCard({ session, myRegistration, userSkillLevel }:
 
           {isMyLevel ? (
             myRegistration ? (
-              <div className="space-y-2">
-                {myRegistration.status === 'pending_confirmation' && (
-                  <button
-                    onClick={handleSignUp} disabled={loading}
-                    className="w-full bg-green-600 text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  >
-                    {loading ? 'מאשר...' : 'אשר את מקומי'}
-                  </button>
-                )}
-                <button
-                  onClick={handleCancel} disabled={loading}
-                  className="w-full border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
-                >
-                  {loading ? '...' : 'ביטול הרשמה'}
-                </button>
-              </div>
+              <button
+                onClick={handleCancel} disabled={loading}
+                className="w-full border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
+              >
+                {loading ? '...' : 'ביטול הרשמה'}
+              </button>
             ) : (
               <button
                 onClick={handleSignUp} disabled={loading}

@@ -5,5 +5,9 @@ export async function createNotification(
   userId: string,
   message: string,
 ): Promise<void> {
-  await supabase.from('notifications').insert({ user_id: userId, message })
+  try {
+    await supabase.from('notifications').insert({ user_id: userId, message })
+  } catch (err) {
+    console.error('Notification creation failed:', err)
+  }
 }

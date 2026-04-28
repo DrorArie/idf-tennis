@@ -17,6 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'מספר אישי חייב להיות 7 ספרות' }, { status: 400 })
   }
 
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: 'אימייל לא תקין' }, { status: 400 })
+  }
+
   const validLevels = ['beginner', 'amateur', 'expert_a', 'expert_b']
   if (!validLevels.includes(skill_level)) {
     return NextResponse.json({ error: 'רמת משחק לא תקינה' }, { status: 400 })

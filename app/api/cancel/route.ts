@@ -1,67 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdmin } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
+import { createNotification } from '@/lib/notifications'
+
+const admin = createAdmin(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
-  const { session_id } = body
-  if (!session_id)
-    return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
+  const { session_id } = await req.json()
+  if (!session_id) return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
 
-  // Get the user's registration
   const { data: reg } = await supabase
     .from('registrations')
-    .select('id, status')
-    .eq('session_id', session_id)
-    .eq('user_id', user.id)
-    .single()
+    .select('id, status, waitlist_position')
+    .eq('session_id', session_id).eq('user_id', user.id).single()
 
-  if (!reg)
-    return NextResponse.json({ error: 'Not registered' }, { status: 404 })
+  if (!reg) return NextResponse.json({ error: 'Not registered' }, { status: 404 })
 
-  const wasConfirmed =
-    reg.status === 'confirmed' || reg.status === 'pending_confirmation'
+  if (reg.status === 'confirmed') {
+    // Delete the confirmed registration
+    await supabase.from('registrations').delete().eq('id', reg.id)
+    await supabase.rpc('decrement_total_signups', { uid: user.id })
 
-  // Delete the registration
-  await supabase.from('registrations').delete().eq('id', reg.id)
-
-  if (wasConfirmed) {
-    // Decrement total signups (only if it was confirmed, not pending)
-    if (reg.status === 'confirmed') {
-      await supabase.rpc('decrement_total_signups', { uid: user.id })
-    }
-
-    // Advance the waitlist: find next person in line
-    const { data: nextWaiting } = await supabase
+    // Auto-promote the first person on the waitlist
+    const { data: nextWaiter } = await admin
       .from('registrations')
       .select('id, user_id')
-      .eq('session_id', session_id)
-      .eq('status', 'waitlist')
+      .eq('session_id', session_id).eq('status', 'waitlist')
       .order('waitlist_position', { ascending: true })
-      .limit(1)
-      .single()
+      .limit(1).single()
 
-    if (nextWaiting) {
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
-      await supabase
+    if (nextWaiter) {
+      // Promote to confirmed immediately — no confirmation step
+      await admin
         .from('registrations')
-        .update({
-          status: 'pending_confirmation',
-          waitlist_notified_at: new Date().toISOString(),
-          waitlist_expires_at: expiresAt,
-        })
-        .eq('id', nextWaiting.id)
+        .update({ status: 'confirmed', waitlist_position: null })
+        .eq('id', nextWaiter.id)
+      await admin.rpc('increment_total_signups', { uid: nextWaiter.user_id })
 
-      // Send in-app notification
-      await supabase.from('notifications').insert({
-        user_id: nextWaiting.user_id,
-        message: 'התפנה מקום באימון שלך! פתח את האפליקציה ואשר את הרשמתך. יש לך שעה.',
-      })
+      const { data: promotedProfile } = await admin
+        .from('profiles').select('email').eq('id', nextWaiter.user_id).single()
+
+      const promotedMsg = 'כל הכבוד! התפנה מקום ונרשמת לאימון.'
+      await createNotification(admin, nextWaiter.user_id, promotedMsg)
+      if (promotedProfile?.email) {
+        await sendEmail(promotedProfile.email, 'נרשמת לאימון טניס!', promotedMsg)
+      }
+
+      // Shift remaining waitlist positions down by 1 and notify each
+      const { data: remaining } = await admin
+        .from('registrations')
+        .select('id, user_id, waitlist_position')
+        .eq('session_id', session_id).eq('status', 'waitlist')
+        .order('waitlist_position', { ascending: true })
+
+      for (const r of (remaining ?? [])) {
+        const newPos = r.waitlist_position - 1
+        await admin.from('registrations').update({ waitlist_position: newPos }).eq('id', r.id)
+
+        const { data: p } = await admin
+          .from('profiles').select('email').eq('id', r.user_id).single()
+
+        const posMsg = `אתה עכשיו במקום #${newPos} ברשימת ההמתנה.`
+        await createNotification(admin, r.user_id, posMsg)
+        if (p?.email) await sendEmail(p.email, 'עדכון מיקום ברשימת ההמתנה', posMsg)
+      }
+    }
+  } else if (reg.status === 'waitlist') {
+    const cancelledPos = reg.waitlist_position!
+    await supabase.from('registrations').delete().eq('id', reg.id)
+
+    // Shift down everyone who was behind the cancelled position
+    const { data: toUpdate } = await admin
+      .from('registrations')
+      .select('id, user_id, waitlist_position')
+      .eq('session_id', session_id).eq('status', 'waitlist')
+      .gt('waitlist_position', cancelledPos)
+      .order('waitlist_position', { ascending: true })
+
+    for (const r of (toUpdate ?? [])) {
+      const newPos = r.waitlist_position - 1
+      await admin.from('registrations').update({ waitlist_position: newPos }).eq('id', r.id)
+
+      const { data: p } = await admin
+        .from('profiles').select('email').eq('id', r.user_id).single()
+
+      const posMsg = `אתה עכשיו במקום #${newPos} ברשימת ההמתנה.`
+      await createNotification(admin, r.user_id, posMsg)
+      if (p?.email) await sendEmail(p.email, 'עדכון מיקום ברשימת ההמתנה', posMsg)
     }
   }
 

@@ -7,14 +7,10 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(req: NextRequest) {
-  const { userId, name, phone, idf_number, skill_level, service_type, email } = await req.json()
+  const { userId, name, phone, skill_level, service_type, email } = await req.json()
 
-  if (!userId || !name || !phone || !idf_number || !skill_level || !service_type || !email) {
+  if (!userId || !name || !phone || !skill_level || !service_type || !email) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
-  }
-
-  if (!/^\d{7}$/.test(idf_number)) {
-    return NextResponse.json({ error: 'מספר אישי חייב להיות 7 ספרות' }, { status: 400 })
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -34,7 +30,6 @@ export async function POST(req: NextRequest) {
     id: userId,
     name,
     phone,
-    idf_number,
     skill_level,
     service_type,
     email,

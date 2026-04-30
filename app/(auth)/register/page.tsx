@@ -16,7 +16,6 @@ export default function RegisterPage() {
     name: '',
     email: '',
     phone: '',
-    idf_number: '',
     skill_level: '',
     service_type: '',
     password: '',
@@ -24,6 +23,7 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showServiceInfo, setShowServiceInfo] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -35,10 +35,6 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    if (!/^\d{7}$/.test(form.idf_number)) {
-      setError('מספר אישי חייב להיות בדיוק 7 ספרות')
-      return
-    }
     if (form.password !== form.confirm_password) {
       setError('הסיסמאות אינן תואמות')
       return
@@ -72,7 +68,6 @@ export default function RegisterPage() {
         userId: authData.user.id,
         name: form.name,
         phone: form.phone,
-        idf_number: form.idf_number,
         skill_level: form.skill_level,
         service_type: form.service_type,
         email: form.email,
@@ -125,23 +120,11 @@ export default function RegisterPage() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">מספר אישי</label>
-        <input
-          type="text" required maxLength={7}
-          value={form.idf_number}
-          onChange={(e) => set('idf_number', e.target.value.replace(/\D/g, ''))}
-          placeholder="7 ספרות"
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-        <p className="text-xs text-gray-500 mt-1">המספר האישי שלך בצבא (7 ספרות בלבד)</p>
-      </div>
-
-      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">רמת משחק</label>
         <select
           required value={form.skill_level}
           onChange={(e) => set('skill_level', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
         >
           <option value="">בחר רמה</option>
           {SKILL_LEVELS.map(({ value, label }) => (
@@ -151,7 +134,21 @@ export default function RegisterPage() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">סוג שירות</label>
+        <div className="flex items-center gap-1.5 mb-1">
+          <label className="text-sm font-medium text-gray-700">סוג שירות</label>
+          <button
+            type="button"
+            onClick={() => setShowServiceInfo((v) => !v)}
+            className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center hover:bg-blue-200 transition-colors flex-shrink-0"
+          >
+            !
+          </button>
+        </div>
+        {showServiceInfo && (
+          <p className="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-2 leading-relaxed">
+            האימונים מיועדים למשרתי קבע ולאזרחים עובדי צה"ל. חיילים במילואים אינם יכולים להירשם כרגע.
+          </p>
+        )}
         <select
           required value={form.service_type}
           onChange={(e) => set('service_type', e.target.value)}

@@ -81,8 +81,8 @@ export default async function ProfilePage() {
             <p className="text-xs text-blue-500 mt-0.5 font-medium">סה״כ אימונים</p>
           </div>
           <div className="bg-gray-50 rounded-xl p-3 text-center">
-            <p className="text-xl font-bold text-gray-700 tracking-widest">{profile?.idf_number}</p>
-            <p className="text-xs text-gray-400 mt-0.5">מספר אישי</p>
+            <p className="text-sm font-semibold text-gray-700">{profile?.service_type === 'keva' ? 'קבע' : 'אזרח עובד צה"ל'}</p>
+            <p className="text-xs text-gray-400 mt-0.5">סוג שירות</p>
           </div>
         </div>
 

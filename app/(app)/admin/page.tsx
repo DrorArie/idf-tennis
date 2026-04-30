@@ -226,7 +226,7 @@ export default async function AdminPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {u.phone} · #{u.idf_number} · {SKILL_HE[u.skill_level]}
+                    {u.phone} · {SKILL_HE[u.skill_level]}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 mr-2 flex-shrink-0">

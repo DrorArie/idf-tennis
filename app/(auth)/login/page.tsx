@@ -27,44 +27,46 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-800">כניסה</h2>
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
-      )}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-      >
-        {loading ? 'מתחבר...' : 'כניסה'}
-      </button>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800">כניסה</h2>
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
+        )}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {loading ? 'מתחבר...' : 'כניסה'}
+        </button>
+      </form>
       <p className="text-sm text-center text-gray-600">
         <Link href="/forgot-password" className="text-blue-600 hover:underline">שכחתי סיסמה</Link>
         {' · '}
         אין לך חשבון?{' '}
         <Link href="/register" className="text-blue-600 hover:underline">הרשמה</Link>
       </p>
-    </form>
+    </div>
   )
 }

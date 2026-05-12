@@ -61,7 +61,13 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="text-sm text-center text-gray-600">
-        <a href="/forgot-password" className="text-blue-600 hover:underline">שכחתי סיסמה</a>
+        <button
+          type="button"
+          onClick={() => { window.location.href = '/forgot-password' }}
+          className="text-blue-600 hover:underline bg-transparent border-0 p-0 cursor-pointer text-sm"
+        >
+          שכחתי סיסמה
+        </button>
         {' · '}
         אין לך חשבון?{' '}
         <a href="/register" className="text-blue-600 hover:underline">הרשמה</a>

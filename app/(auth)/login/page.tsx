@@ -43,10 +43,7 @@ export default function LoginPage() {
         />
       </div>
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-gray-700">סיסמה</label>
-          <Link href="/forgot-password" className="text-xs text-blue-600 hover:underline">שכחתי סיסמה</Link>
-        </div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
         <input
           type="password"
           required
@@ -63,10 +60,10 @@ export default function LoginPage() {
         {loading ? 'מתחבר...' : 'כניסה'}
       </button>
       <p className="text-sm text-center text-gray-600">
+        <Link href="/forgot-password" className="text-blue-600 hover:underline">שכחתי סיסמה</Link>
+        {' · '}
         אין לך חשבון?{' '}
-        <Link href="/register" className="text-blue-600 hover:underline">
-          הרשמה
-        </Link>
+        <Link href="/register" className="text-blue-600 hover:underline">הרשמה</Link>
       </p>
     </form>
   )

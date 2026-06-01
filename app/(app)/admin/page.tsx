@@ -97,9 +97,11 @@ export default async function AdminPage() {
     const now = new Date()
     const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
     const day = israelTime.getDay()
-    const daysSinceTuesday = (day - 2 + 7) % 7
+    const daysToTuesday = (day === 0 || day === 1 || day === 6)
+      ? (9 - day) % 7
+      : -(day - 2)
     const tuesday = new Date(israelTime)
-    tuesday.setDate(israelTime.getDate() - daysSinceTuesday)
+    tuesday.setDate(israelTime.getDate() + daysToTuesday)
     const y = tuesday.getFullYear()
     const m = String(tuesday.getMonth() + 1).padStart(2, '0')
     const d = String(tuesday.getDate()).padStart(2, '0')

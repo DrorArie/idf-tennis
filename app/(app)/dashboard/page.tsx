@@ -11,14 +11,19 @@ const SKILL_LABEL: Record<string, string> = {
   expert_b: 'מתקדמים ב׳ (10:00)',
 }
 
-// Returns the most recent past Tuesday (or today if today is Tuesday)
+// Returns the Tuesday for the current active week.
+// After Friday's session, advances to next Tuesday so the display moves forward.
 function getThisWeekTuesday(): string {
   const now = new Date()
   const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
   const day = israelTime.getDay() // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const daysSinceTuesday = (day - 2 + 7) % 7
+  // Sat/Sun/Mon: Friday has passed, jump forward to next Tuesday
+  // Tue/Wed/Thu/Fri: use the most recent Tuesday (current active week)
+  const daysToTuesday = (day === 0 || day === 1 || day === 6)
+    ? (9 - day) % 7   // Sat→+3, Sun→+2, Mon→+1
+    : -(day - 2)       // Tue→0, Wed→-1, Thu→-2, Fri→-3
   const tuesday = new Date(israelTime)
-  tuesday.setDate(israelTime.getDate() - daysSinceTuesday)
+  tuesday.setDate(israelTime.getDate() + daysToTuesday)
   const y = tuesday.getFullYear()
   const m = String(tuesday.getMonth() + 1).padStart(2, '0')
   const d = String(tuesday.getDate()).padStart(2, '0')

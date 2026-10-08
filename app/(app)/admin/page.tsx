@@ -3,6 +3,17 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { createAdminClient, ensureActiveWeekOpen, openWeek } from '@/lib/sessions'
+import { getActiveWeekStart, getExerciseDate } from '@/lib/week'
+
+async function requireAdmin() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data: profile } = await supabase
+    .from('profiles').select('is_admin').eq('id', user.id).single()
+  return profile?.is_admin ? supabase : null
+}
 
 const TIME_LABEL: Record<string, string> = {
   '07:00:00': '07:00',
@@ -19,21 +30,6 @@ const SKILL_HE: Record<string, string> = {
   expert_b: 'מתקדמים ב׳',
 }
 
-function getThisWeekTuesday(): string {
-  const now = new Date()
-  const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
-  const day = israelTime.getDay()
-  const daysToTuesday = (day === 0 || day === 1 || day === 6)
-    ? (9 - day) % 7
-    : -(day - 2)
-  const tuesday = new Date(israelTime)
-  tuesday.setDate(israelTime.getDate() + daysToTuesday)
-  const y = tuesday.getFullYear()
-  const m = String(tuesday.getMonth() + 1).padStart(2, '0')
-  const d = String(tuesday.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
 export default async function AdminPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -43,7 +39,8 @@ export default async function AdminPage() {
     .from('profiles').select('is_admin').eq('id', user.id).single()
   if (!profile?.is_admin) redirect('/dashboard')
 
-  const weekStart = getThisWeekTuesday()
+  await ensureActiveWeekOpen(createAdminClient())
+  const weekStart = getActiveWeekStart()
 
   const { data: sessions } = await supabase
     .from('sessions')
@@ -89,29 +86,8 @@ export default async function AdminPage() {
 
   async function openWeekSessions() {
     'use server'
-    const { createClient: createAdmin } = await import('@supabase/supabase-js')
-    const admin = createAdmin(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    const now = new Date()
-    const israelTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }))
-    const day = israelTime.getDay()
-    const daysToTuesday = (day === 0 || day === 1 || day === 6)
-      ? (9 - day) % 7
-      : -(day - 2)
-    const tuesday = new Date(israelTime)
-    tuesday.setDate(israelTime.getDate() + daysToTuesday)
-    const y = tuesday.getFullYear()
-    const m = String(tuesday.getMonth() + 1).padStart(2, '0')
-    const d = String(tuesday.getDate()).padStart(2, '0')
-    const ws = `${y}-${m}-${d}`
-    await admin.from('sessions').upsert([
-      { week_start: ws, time_slot: '07:00:00', skill_level: 'beginner', capacity: 8, is_open: true },
-      { week_start: ws, time_slot: '08:00:00', skill_level: 'amateur', capacity: 8, is_open: true },
-      { week_start: ws, time_slot: '09:00:00', skill_level: 'expert_a', capacity: 8, is_open: true },
-      { week_start: ws, time_slot: '10:00:00', skill_level: 'expert_b', capacity: 8, is_open: true },
-    ], { onConflict: 'week_start,time_slot' })
+    if (!(await requireAdmin())) return
+    await openWeek(createAdminClient(), getActiveWeekStart())
     revalidatePath('/admin')
     revalidatePath('/dashboard')
   }
@@ -120,14 +96,13 @@ export default async function AdminPage() {
     'use server'
     const userId = formData.get('userId') as string
     const currentStatus = formData.get('currentStatus') === 'true'
-    const supabase = await createClient()
+    const supabase = await requireAdmin()
+    if (!supabase) return
     await supabase.from('profiles').update({ is_blacklisted: !currentStatus }).eq('id', userId)
     revalidatePath('/admin')
   }
 
-  const [wy, wm, wd] = weekStart.split('-').map(Number)
-  const exerciseDate = new Date(wy, wm - 1, wd + 3)
-  const weekDateStr = exerciseDate.toLocaleDateString('he-IL', {
+  const weekDateStr = getExerciseDate(weekStart).toLocaleDateString('he-IL', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 

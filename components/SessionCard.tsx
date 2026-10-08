@@ -34,36 +34,39 @@ interface Props {
   session: Session
   myRegistration: Registration | null
   userSkillLevel: string
+  registrationClosed: boolean
 }
 
-export default function SessionCard({ session, myRegistration, userSkillLevel }: Props) {
+export default function SessionCard({ session, myRegistration, userSkillLevel, registrationClosed }: Props) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const spotsLeft = session.capacity - session.confirmed_count
   const isMyLevel = session.skill_level === userSkillLevel
 
-  async function handleSignUp() {
+  async function submit(path: '/api/signup' | '/api/cancel') {
     setLoading(true)
-    await fetch('/api/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: session.id }),
-    })
+    setError('')
+    try {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: session.id }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? 'משהו השתבש, נסה שוב')
+      }
+    } catch {
+      setError('אין חיבור לאינטרנט, נסה שוב')
+    }
     router.refresh()
     setLoading(false)
   }
 
-  async function handleCancel() {
-    setLoading(true)
-    await fetch('/api/cancel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: session.id }),
-    })
-    router.refresh()
-    setLoading(false)
-  }
+  const handleSignUp = () => submit('/api/signup')
+  const handleCancel = () => submit('/api/cancel')
 
   const statusBadge = myRegistration ? (
     myRegistration.status === 'confirmed' ? (
@@ -88,9 +91,11 @@ export default function SessionCard({ session, myRegistration, userSkillLevel }:
         {statusBadge}
       </div>
 
-      {!session.is_open ? (
+      {!session.is_open || registrationClosed ? (
         <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <p className="text-sm text-gray-400">נפתח בכל יום שלישי בשעה 12:00</p>
+          <p className="text-sm text-gray-400">
+            {registrationClosed ? 'ההרשמה לאימון זה נסגרה' : 'נפתח בכל יום שלישי בשעה 12:00'}
+          </p>
         </div>
       ) : (
         <>
@@ -127,6 +132,10 @@ export default function SessionCard({ session, myRegistration, userSkillLevel }:
             )
           ) : null}
         </>
+      )}
+
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 rounded-xl p-3 mt-3 text-center">{error}</p>
       )}
     </div>
   )

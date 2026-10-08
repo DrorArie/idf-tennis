@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient, openWeek } from '@/lib/sessions'
+import { getActiveWeekStart, hasRegistrationOpened } from '@/lib/week'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   // Vercel automatically sends Authorization: Bearer <CRON_SECRET>
@@ -13,21 +11,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get today's date in Israel timezone (will be Tuesday when cron fires)
-  const weekStart = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jerusalem',
-  }).format(new Date())
+  const weekStart = getActiveWeekStart()
 
-  const sessions = [
-    { week_start: weekStart, time_slot: '07:00:00', skill_level: 'beginner', capacity: 8, is_open: true },
-    { week_start: weekStart, time_slot: '08:00:00', skill_level: 'amateur', capacity: 8, is_open: true },
-    { week_start: weekStart, time_slot: '09:00:00', skill_level: 'expert_a', capacity: 8, is_open: true },
-    { week_start: weekStart, time_slot: '10:00:00', skill_level: 'expert_b', capacity: 8, is_open: true },
-  ]
+  // Cron schedule is UTC, so in some seasons it can fire before 12:00 Israel time
+  if (!hasRegistrationOpened(weekStart)) {
+    return NextResponse.json({ skipped: 'too early', weekStart })
+  }
 
-  const { error } = await supabaseAdmin
-    .from('sessions')
-    .upsert(sessions, { onConflict: 'week_start,time_slot' })
+  const { error } = await openWeek(createAdminClient(), weekStart)
 
   if (error) {
     console.error('open-sessions cron error:', error)

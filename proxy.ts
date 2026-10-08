@@ -30,6 +30,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+
+  // API routes handle their own auth (cron uses CRON_SECRET, others return 401)
+  if (pathname.startsWith('/api/')) return supabaseResponse
+
   const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password']
   const isPublic = publicRoutes.some((r) => pathname.startsWith(r))
 
@@ -37,7 +41,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && isPublic) {
+  // A reset link signs the user in, so they must be allowed to stay on /reset-password
+  if (user && isPublic && !pathname.startsWith('/reset-password')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

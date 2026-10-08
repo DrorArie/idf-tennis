@@ -9,15 +9,26 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [ready, setReady] = useState(false)
+  const [linkInvalid, setLinkInvalid] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    // Supabase fires PASSWORD_RECOVERY when the user arrives via the reset link
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true)
+    // The reset link signs the user in. Depending on timing Supabase reports this as
+    // PASSWORD_RECOVERY, SIGNED_IN or an already-existing session — any of them means ready.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || session) setReady(true)
     })
-    return () => subscription.unsubscribe()
+    // If no session shows up, the link is expired or was already used
+    const timer = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) setReady(true)
+      else setLinkInvalid(true)
+    }, 4000)
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timer)
+    }
   }, [supabase])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,6 +54,17 @@ export default function ResetPasswordPage() {
       router.push('/dashboard')
       router.refresh()
     }
+  }
+
+  if (!ready && linkInvalid) {
+    return (
+      <div className="text-center space-y-3 py-8">
+        <p className="text-gray-700 text-sm">הקישור לאיפוס הסיסמה פג תוקף או כבר נוצל.</p>
+        <a href="/forgot-password" className="block text-sm text-blue-600 hover:underline">
+          שלח קישור חדש
+        </a>
+      </div>
+    )
   }
 
   if (!ready) {

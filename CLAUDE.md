@@ -48,7 +48,7 @@ lib/
     client.ts      — browser client
     server.ts      — server client (uses cookies)
 supabase/
-  migrations/      — 001 base schema, 002 service_type + waitlist cleanup, 003 idf_number optional
+  migrations/      — 001 base schema, 002 service_type + waitlist cleanup, 003 idf_number optional, 004 stop users editing is_admin/is_blacklisted/total_signups
   functions/
     open-weekly-slots/   — Supabase Edge Function (legacy, Vercel cron is primary)
     expire-waitlist/     — NO-OP (pending_confirmation flow removed)
@@ -100,10 +100,11 @@ Each user can only register for their own skill group's session.
 
 ## Key Business Logic
 
-- **Week start:** Always the most recent Tuesday (Israel time, `Asia/Jerusalem`). Computed with `getThisWeekTuesday()` in `dashboard/page.tsx` and `admin/page.tsx`.
+- **Week start:** The active week's Tuesday (Israel time, `Asia/Jerusalem`); Sat–Mon it already points to next Tuesday. All week/time logic lives in `lib/week.ts` (`getActiveWeekStart`, `hasRegistrationOpened/Closed`). Session creation lives in `lib/sessions.ts`.
 - **Exercise date:** Always Friday = `week_start + 3 days`. The `+3` is intentional.
-- **Sessions open:** Tuesday 12:00 Israel time → Vercel cron hits `/api/cron/open-sessions`. Admin can also open manually with the "פתח השבוע" button.
-- **Sessions close:** Thursday 12:00 Israel time → Vercel cron hits `/api/cron/close-sessions` (sets `is_open = false`).
+- **Sessions open:** Tuesday 12:00 Israel time. Vercel cron (`0 10 * * 2` UTC, skips itself if too early) hits `/api/cron/open-sessions`; the dashboard/admin pages also create the week's sessions on load once the window opens (`ensureActiveWeekOpen`), so opening is on time even when the cron is late. Admin can also open manually with the "פתח השבוע" button.
+- **Sessions close:** Thursday 12:00 Israel time. The signup API rejects anything after the deadline regardless of `is_open`; the cron (`0 10 * * 4` UTC) then sets `is_open = false`.
+- **proxy.ts** skips `/api/*` — API routes do their own auth (crons need to reach their handler without a login cookie).
 - **Signup flow:** Confirmed directly if capacity available; otherwise added to `waitlist` with a position number. In-app + email notification sent on waitlist join.
 - **Cancel flow:** If confirmed → spot freed, next waitlisted person is **automatically promoted to confirmed** (no user action needed). Both the promoted user and all remaining waitlisters get in-app + email notifications with updated positions.
 - **No pending_confirmation:** This status was removed. Promotion is instant and automatic.

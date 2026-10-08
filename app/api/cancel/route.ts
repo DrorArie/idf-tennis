@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdmin } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { createNotification } from '@/lib/notifications'
+import { createAdminClient } from '@/lib/sessions'
 
-const admin = createAdmin(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const admin = createAdminClient()
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'יש להתחבר מחדש' }, { status: 401 })
 
   const { session_id } = await req.json()
   if (!session_id) return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
@@ -20,13 +17,17 @@ export async function POST(req: NextRequest) {
   const { data: reg } = await supabase
     .from('registrations')
     .select('id, status, waitlist_position')
-    .eq('session_id', session_id).eq('user_id', user.id).single()
+    .eq('session_id', session_id).eq('user_id', user.id).maybeSingle()
 
-  if (!reg) return NextResponse.json({ error: 'Not registered' }, { status: 404 })
+  if (!reg) return NextResponse.json({ error: 'לא נמצאה הרשמה לביטול' }, { status: 404 })
 
   if (reg.status === 'confirmed') {
     // Delete the confirmed registration
-    await supabase.from('registrations').delete().eq('id', reg.id)
+    const { error: delError } = await supabase.from('registrations').delete().eq('id', reg.id)
+    if (delError) {
+      console.error('cancel delete error:', delError)
+      return NextResponse.json({ error: 'הביטול נכשל, נסה שוב' }, { status: 500 })
+    }
     await supabase.rpc('decrement_total_signups', { uid: user.id })
 
     // Auto-promote the first person on the waitlist
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       .select('id, user_id')
       .eq('session_id', session_id).eq('status', 'waitlist')
       .order('waitlist_position', { ascending: true })
-      .limit(1).single()
+      .limit(1).maybeSingle()
 
     if (nextWaiter) {
       // Promote to confirmed immediately — no confirmation step
@@ -76,7 +77,11 @@ export async function POST(req: NextRequest) {
   } else if (reg.status === 'waitlist') {
     if (!reg.waitlist_position) return NextResponse.json({ error: 'Invalid waitlist state' }, { status: 500 })
     const cancelledPos = reg.waitlist_position
-    await supabase.from('registrations').delete().eq('id', reg.id)
+    const { error: delError } = await supabase.from('registrations').delete().eq('id', reg.id)
+    if (delError) {
+      console.error('cancel delete error:', delError)
+      return NextResponse.json({ error: 'הביטול נכשל, נסה שוב' }, { status: 500 })
+    }
 
     // Shift down everyone who was behind the cancelled position
     const { data: toUpdate } = await admin

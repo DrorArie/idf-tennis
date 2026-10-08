@@ -24,37 +24,27 @@ A Hebrew-language, RTL web app for IDF personnel to register for weekly tennis t
 
 ```
 app/
-  (app)/           — authenticated routes
-    dashboard/     — user's weekly session view
-    admin/         — admin panel (is_admin flag required)
-    profile/       — user profile + registration history
-    layout.tsx     — bottom nav + notification bell
-  (auth)/          — unauthenticated routes
-    login/
-    register/
+  (app)/           — authenticated routes (layout awaits nothing; user bits stream in via Suspense)
+    actions.ts     — member server actions: signUp, cancel, updateProfile, completeProfile, signOut
+    dashboard/     — page.tsx (data) + parts.tsx (CourtCard, StatusCard, WeekTimeline) + CompleteProfile
+    admin/         — page.tsx + actions.ts (open/close week, remove participant, capacity, block/admin)
+                     + StatusPanel, GroupCard, UserList client components
+    profile/       — page.tsx + ProfileForm
+    */loading.tsx  — skeletons so tab switches are instant
+  (auth)/          — login, register, forgot-password, reset-password
   api/
-    signup/        — POST: register for a session (notifies on waitlist join)
-    cancel/        — POST: cancel; auto-promotes next waitlisted user
-    cron/
-      open-sessions/  — GET: opens weekly slots (Vercel cron, Tuesday 12:00 IL)
-      close-sessions/ — GET: closes weekly slots (Vercel cron, Thursday 12:00 IL)
-components/
-  SessionCard.tsx  — client component for a single session
-  NotificationBell.tsx
+    register/      — POST: creates profile for the just-signed-up (signed-in) user
+    cron/open-sessions, cron/close-sessions — Vercel crons (CRON_SECRET)
+components/        — ActionButton (pending + tap-twice confirm), Form (Field/Select/SubmitButton),
+                     BottomNav, NotificationBell, Logo, TennisBall
 lib/
-  email.ts         — sendEmail(to, subject, text) via Gmail SMTP; silent no-op if env vars missing
-  notifications.ts — createNotification(supabase, userId, message); inserts to notifications table
-  supabase/
-    client.ts      — browser client
-    server.ts      — server client (uses cookies)
-supabase/
-  migrations/      — 001 base schema, 002 service_type + waitlist cleanup, 003 idf_number optional, 004 stop users editing is_admin/is_blacklisted/total_signups
-  functions/
-    open-weekly-slots/   — Supabase Edge Function (legacy, Vercel cron is primary)
-    expire-waitlist/     — NO-OP (pending_confirmation flow removed)
+  week.ts          — ALL time logic: getActiveWeekStart, opensAt/closesAt, registrationState, canCancel, Hebrew formatters
+  sessions.ts      — createAdminClient, ensureActiveWeekOpen, adminOpenWeek, closeWeek
+  registrations.ts — signUp, cancel, admin remove, setCapacity, settleSession (waitlist engine), notifications via after()
+  auth.ts          — cached getUser/getProfile, requireMember/requireAdmin, currentAdmin
+supabase/migrations/ — 001–003 schema history, 004 protect is_admin/is_blacklisted/total_signups,
+                       005 sessions.closes_at + lock down notifications insert & signup counter RPCs
 ```
-
----
 
 ## Database Schema
 
@@ -100,22 +90,16 @@ Each user can only register for their own skill group's session.
 
 ## Key Business Logic
 
-- **Week start:** The active week's Tuesday (Israel time, `Asia/Jerusalem`); Sat–Mon it already points to next Tuesday. All week/time logic lives in `lib/week.ts` (`getActiveWeekStart`, `hasRegistrationOpened/Closed`). Session creation lives in `lib/sessions.ts`.
-- **Exercise date:** Always Friday = `week_start + 3 days`. The `+3` is intentional.
-- **Sessions open:** Tuesday 12:00 Israel time. Vercel cron (`0 10 * * 2` UTC, skips itself if too early) hits `/api/cron/open-sessions`; the dashboard/admin pages also create the week's sessions on load once the window opens (`ensureActiveWeekOpen`), so opening is on time even when the cron is late. Admin can also open manually with the "פתח השבוע" button.
-- **Sessions close:** Thursday 12:00 Israel time. The signup API rejects anything after the deadline regardless of `is_open`; the cron (`0 10 * * 4` UTC) then sets `is_open = false`.
-- **proxy.ts** skips `/api/*` — API routes do their own auth (crons need to reach their handler without a login cookie).
-- **Signup flow:** Confirmed directly if capacity available; otherwise added to `waitlist` with a position number. In-app + email notification sent on waitlist join.
-- **Cancel deadline:** Cancelling stays possible after registration closes, until Thursday midnight (`hasCancellationClosed`), so no-shows can free their spot for the waitlist.
-- **Skill change lock:** Profile page blocks changing skill level while the user has a registration for the active week.
-- **Blocked users:** `(app)/layout` redirects to `/login?reason=blacklisted`; proxy lets that through even when signed in, and the login page signs them out and shows a message.
-- **Cancel flow:** If confirmed → spot freed, next waitlisted person is **automatically promoted to confirmed** (no user action needed). Both the promoted user and all remaining waitlisters get in-app + email notifications with updated positions.
-- **No pending_confirmation:** This status was removed. Promotion is instant and automatic.
-- **Who can register:** `keva` and `ezrach` service types only. מילואים / חובה have no registration path.
-- **Blacklist:** Admin can block users. Blacklisted users get a 403 from the signup API.
-- **Admin panel:** Shows this week's registrations per session, waitlist, and all users sorted by `total_signups`. Admin can toggle blacklist, grant/revoke admin, and manually open the week.
-
----
+- **Week start:** active week's Tuesday (Israel time); Sat–Mon already points to next Tuesday. Exercise = Friday (week_start + 3).
+- **Registration state** (`registrationState` in lib/week.ts) is the single source of truth: open iff `is_open` and (`closes_at` null or in the future). Also 'upcoming' / 'closed' / 'finished'.
+- **Auto open:** Tuesday 12:00 — dashboard/admin page loads (and the cron, `0 10 * * 2` UTC) create the week with `closes_at` = Thursday 12:00. Existing rows are never overwritten.
+- **Admin open:** before the deadline keeps Thursday 12:00; after it sets `closes_at = null` → open until the admin closes. Admin close sets `is_open = false`.
+- **Close cron** (`0 10 * * 4`) only flips `is_open` for rows whose `closes_at` passed (display only; signups already stop at closes_at).
+- **settleSession:** after every signup/cancel/removal/capacity change — orders by created_at, demotes overbooked (race at 12:00 rush), promotes waitlisters into free spots, renumbers waitlist 1..n, notifies changed users. All writes use the service-role client after the caller is verified.
+- **Cancel:** allowed until the session starts. **Skill change** blocked while registered for the active week.
+- **Blocked users:** redirected to `/login?reason=blacklisted` (proxy lets it through), login page signs them out.
+- **proxy.ts** skips `/api/*` (crons must reach their handler without a login cookie).
+- Fonts: Rubik (body) + Karantina (display numbers/headlines), both with Hebrew. Theme tokens in globals.css (`court`, `ball`, `chalk`, `ink`…).
 
 ## Notifications
 

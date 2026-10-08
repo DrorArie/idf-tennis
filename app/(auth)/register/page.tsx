@@ -1,62 +1,31 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-const SKILL_LEVELS = [
-  { value: 'beginner', label: 'מתחיל (קבוצת 7:00)' },
-  { value: 'amateur', label: 'חובבן (קבוצת 8:00)' },
-  { value: 'expert_a', label: 'מתקדם א׳ (קבוצת 9:00-10:00)' },
-  { value: 'expert_b', label: 'מתקדם ב׳ (קבוצת 10:00-11:00)' },
-]
+import { Field, FormError, Select, SubmitButton } from '@/components/Form'
+import { SERVICE_OPTIONS, SKILL_OPTIONS } from '@/lib/options'
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    skill_level: '',
-    service_type: '',
-    password: '',
-    confirm_password: '',
-  })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showServiceInfo, setShowServiceInfo] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  function set(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }))
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>
     setError('')
 
-    if (form.password !== form.confirm_password) {
-      setError('הסיסמאות אינן תואמות')
-      return
-    }
-    if (form.password.length < 6) {
-      setError('סיסמה חייבת להכיל לפחות 6 תווים')
-      return
-    }
-    if (!form.service_type) {
-      setError('יש לבחור סוג שירות')
-      return
-    }
+    if (f.password.length < 6) return setError('הסיסמה צריכה להכיל לפחות 6 תווים')
+    if (f.password !== f.confirm_password) return setError('הסיסמאות אינן תואמות')
+    if (!f.skill_level) return setError('יש לבחור רמת משחק')
+    if (!f.service_type) return setError('יש לבחור סוג שירות')
 
     setLoading(true)
-
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    })
-
-    if (authError || !authData.user) {
-      setError(authError?.message ?? 'ההרשמה נכשלה')
+    const { data, error: authError } = await supabase.auth.signUp({ email: f.email.trim(), password: f.password })
+    if (authError || !data.user) {
+      setError(authError?.message.includes('registered') ? 'כבר קיים חשבון עם האימייל הזה — נסה/י להתחבר' : 'ההרשמה נכשלה, נסה/י שוב')
       setLoading(false)
       return
     }
@@ -64,130 +33,58 @@ export default function RegisterPage() {
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: authData.user.id,
-        name: form.name,
-        phone: form.phone,
-        skill_level: form.skill_level,
-        service_type: form.service_type,
-        email: form.email,
-      }),
+      body: JSON.stringify({ name: f.name, phone: f.phone, skill_level: f.skill_level, service_type: f.service_type }),
     })
-
-    const data = await res.json()
     if (!res.ok) {
-      setError(data.error ?? 'שגיאה ביצירת הפרופיל')
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'שגיאה ביצירת הפרופיל')
       setLoading(false)
       return
     }
 
-    router.push('/dashboard')
+    router.replace('/dashboard')
     router.refresh()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-800">יצירת חשבון</h2>
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא</label>
-        <input
-          type="text" required value={form.name}
-          onChange={(e) => set('name', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
-        <input
-          type="email" required value={form.email}
-          onChange={(e) => set('email', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">מספר טלפון</label>
-        <input
-          type="tel" required value={form.phone}
-          onChange={(e) => set('phone', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">רמת משחק</label>
-        <select
-          required value={form.skill_level}
-          onChange={(e) => set('skill_level', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+    <div className="space-y-5">
+      <h2 className="text-2xl font-bold">יצירת חשבון</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <FormError>{error}</FormError>}
+        <Field label="שם מלא" name="name" autoComplete="name" required />
+        <Field label="אימייל" name="email" type="email" autoComplete="email" required dir="ltr" className="text-right" />
+        <Field label="מספר טלפון" name="phone" type="tel" autoComplete="tel" required dir="ltr" className="text-right" />
+        <Select label="רמת משחק" name="skill_level" options={SKILL_OPTIONS} placeholder="בחר/י רמה" required />
+        <Select
+          label="סוג שירות"
+          name="service_type"
+          options={SERVICE_OPTIONS}
+          placeholder="בחר/י סוג שירות"
+          required
+          extra={
+            <button
+              type="button"
+              onClick={() => setShowServiceInfo((v) => !v)}
+              aria-label="מי יכול להירשם"
+              className="w-5 h-5 rounded-full bg-court/10 text-court text-xs font-bold grid place-items-center hover:bg-court/20 cursor-pointer"
+            >
+              !
+            </button>
+          }
         >
-          <option value="">בחר רמה</option>
-          {SKILL_LEVELS.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <div className="flex items-center gap-1.5 mb-1">
-          <label className="text-sm font-medium text-gray-700">סוג שירות</label>
-          <button
-            type="button"
-            onClick={() => setShowServiceInfo((v) => !v)}
-            className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center hover:bg-blue-200 transition-colors flex-shrink-0"
-          >
-            !
-          </button>
-        </div>
-        {showServiceInfo && (
-          <p className="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-2 leading-relaxed">
-            האימונים מיועדים למשרתי קבע ולאזרחים עובדי צה"ל. חיילים במילואים אינם יכולים להירשם כרגע.
-          </p>
-        )}
-        <select
-          required value={form.service_type}
-          onChange={(e) => set('service_type', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-        >
-          <option value="">בחר סוג שירות</option>
-          <option value="keva">קבע</option>
-          <option value="ezrach">אזרח עובד צה"ל</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
-        <input
-          type="password" required value={form.password}
-          onChange={(e) => set('password', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">אימות סיסמה</label>
-        <input
-          type="password" required value={form.confirm_password}
-          onChange={(e) => set('confirm_password', e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
-      </div>
-
-      <button
-        type="submit" disabled={loading}
-        className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-      >
-        {loading ? 'יוצר חשבון...' : 'יצירת חשבון'}
-      </button>
-      <p className="text-sm text-center text-gray-600">
-        כבר יש לך חשבון?{' '}
-        <Link href="/login" className="text-blue-600 hover:underline">כניסה</Link>
+          {showServiceInfo && (
+            <p className="text-xs text-ink-soft bg-court/5 border border-court/15 rounded-xl px-3 py-2 mb-2 leading-relaxed animate-pop">
+              האימונים מיועדים למשרתי קבע ולאזרחים עובדי צה״ל. חיילים במילואים אינם יכולים להירשם כרגע.
+            </p>
+          )}
+        </Select>
+        <Field label="סיסמה" name="password" type="password" autoComplete="new-password" required dir="ltr" className="text-right" />
+        <Field label="אימות סיסמה" name="confirm_password" type="password" autoComplete="new-password" required dir="ltr" className="text-right" />
+        <SubmitButton pendingLabel="יוצר חשבון…" pending={loading}>יצירת חשבון</SubmitButton>
+      </form>
+      <p className="text-sm text-center text-ink-soft">
+        כבר יש לך חשבון? <a href="/login" className="font-semibold text-court hover:underline">כניסה</a>
       </p>
-    </form>
+    </div>
   )
 }

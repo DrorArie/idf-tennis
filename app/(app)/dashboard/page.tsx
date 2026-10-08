@@ -1,108 +1,75 @@
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import SessionCard from '@/components/SessionCard'
+import { requireMember } from '@/lib/auth'
 import { createAdminClient, ensureActiveWeekOpen } from '@/lib/sessions'
-import { getActiveWeekStart, getExerciseDate, hasCancellationClosed, hasRegistrationClosed } from '@/lib/week'
+import {
+  SKILL_TIME, exerciseDay, formatLongDate, getActiveWeekStart, isRegistrationWindow, registrationState,
+} from '@/lib/week'
+import { CourtCard, StatusCard, WeekTimeline, type SessionRow } from './parts'
+import CompleteProfile from './CompleteProfile'
 
-const SKILL_LABEL: Record<string, string> = {
-  beginner: 'מתחילים (7:00)',
-  amateur: 'חובבנים (8:00)',
-  expert_a: 'מתקדמים א׳ (9:00)',
-  expert_b: 'מתקדמים ב׳ (10:00)',
+async function loadWeek(weekStart: string) {
+  const { data } = await createAdminClient()
+    .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
+  return (data ?? []) as SessionRow[]
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles').select('skill_level').eq('id', user.id).single()
-
-  await ensureActiveWeekOpen(createAdminClient())
+  const { user, profile } = await requireMember()
+  if (!profile) return <CompleteProfile email={user.email ?? ''} />
 
   const weekStart = getActiveWeekStart()
-  const registrationClosed = hasRegistrationClosed(weekStart)
-  const exerciseDate = getExerciseDate(weekStart)
-  const exerciseDateStr = exerciseDate.toLocaleDateString('he-IL', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
-  const todayStr = new Date().toLocaleDateString('he-IL', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: 'Asia/Jerusalem',
-  })
-
-  const { data: sessions } = await supabase
-    .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
-
-  const sessionIds = (sessions ?? []).map((s) => s.id)
-
-  const { data: myRegistrations } = await supabase
-    .from('registrations')
-    .select('session_id, status, waitlist_position')
-    .eq('user_id', user.id)
-    .in('session_id', sessionIds.length > 0 ? sessionIds : ['00000000-0000-0000-0000-000000000000'])
-
-  const countMap: Record<string, number> = {}
-  if (sessionIds.length > 0) {
-    const { data: counts } = await supabase.rpc('get_confirmed_counts', { session_ids: sessionIds })
-    ;(counts ?? []).forEach((c: { session_id: string; count: number }) => {
-      countMap[c.session_id] = c.count
-    })
+  let sessions = await loadWeek(weekStart)
+  // Safety net: open the week on time even if the scheduled job hasn't run yet
+  if (sessions.length === 0 && isRegistrationWindow(weekStart)) {
+    await ensureActiveWeekOpen()
+    sessions = await loadWeek(weekStart)
   }
 
-  const myRegMap = Object.fromEntries((myRegistrations ?? []).map((r) => [r.session_id, r]))
+  const session = sessions.find((s) => s.skill_level === profile.skill_level) ?? null
+  const { data: regs } = session
+    ? await createAdminClient()
+        .from('registrations').select('user_id, status, waitlist_position').eq('session_id', session.id)
+    : { data: [] }
 
-  // Find user's registration for their own skill group
-  const mySkillSession = (sessions ?? []).find(s => s.skill_level === profile?.skill_level)
-  const mySkillReg = mySkillSession ? myRegMap[mySkillSession.id] : null
+  const confirmed = (regs ?? []).filter((r) => r.status === 'confirmed').length
+  const waiting = (regs ?? []).filter((r) => r.status === 'waitlist').length
+  const mine = (regs ?? []).find((r) => r.user_id === user.id) ?? null
+  const state = registrationState(session, weekStart)
+  const capacity = session?.capacity ?? 8
+  const time = session?.time_slot.slice(0, 5) ?? SKILL_TIME[profile.skill_level]
+  const firstName = profile.name.split(' ')[0]
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">אימון השבוע</h2>
-        <p className="text-sm font-medium text-gray-700">{exerciseDateStr}</p>
-        <p className="text-xs text-gray-400 mt-0.5">היום: {todayStr}</p>
+    <div className="space-y-5">
+      <p className="text-ink-soft animate-rise">
+        שלום <span className="font-semibold text-ink">{firstName}</span>
+      </p>
+
+      <div className="animate-rise" style={{ animationDelay: '60ms' }}>
+        <CourtCard
+          dateLabel={formatLongDate(exerciseDay(weekStart))}
+          time={time}
+          skill={profile.skill_level}
+          stats={session ? { confirmed, capacity, waiting } : null}
+        />
       </div>
 
-      {/* Registration status banner */}
-      {mySkillReg?.status === 'confirmed' && (
-        <div className="bg-green-500 text-white rounded-2xl p-5 text-center shadow-md">
-          <p className="text-4xl mb-2">✓</p>
-          <p className="text-xl font-bold">נרשמת לאימון!</p>
-          <p className="text-sm opacity-90 mt-1">
-            {SKILL_LABEL[profile?.skill_level ?? '']} · {exerciseDateStr}
-          </p>
-        </div>
-      )}
-
-      {mySkillReg?.status === 'waitlist' && (
-        <div className="bg-yellow-400 text-yellow-900 rounded-2xl p-5 text-center shadow-md">
-          <p className="text-4xl mb-2">⏳</p>
-          <p className="text-xl font-bold">ברשימת המתנה #{mySkillReg.waitlist_position}</p>
-          <p className="text-sm opacity-80 mt-1">
-            {SKILL_LABEL[profile?.skill_level ?? '']} · {exerciseDateStr}
-          </p>
-        </div>
-      )}
-
-      {!mySkillSession ? (
-        <div className="bg-white rounded-2xl p-10 text-center shadow-sm border border-gray-100">
-          <p className="text-4xl mb-3">🎾</p>
-          <p className="text-gray-600 font-medium">עדיין אין אימונים השבוע</p>
-          <p className="text-sm text-gray-400 mt-1">המקומות נפתחים אוטומטית כל יום שלישי בשעה 12:00</p>
-        </div>
-      ) : (
-        <SessionCard
-          session={{ ...mySkillSession, confirmed_count: countMap[mySkillSession.id] ?? 0 }}
-          myRegistration={mySkillReg ?? null}
-          userSkillLevel={profile?.skill_level ?? ''}
-          registrationClosed={registrationClosed}
-          cancellationClosed={hasCancellationClosed(weekStart)}
+      <div className="animate-rise" style={{ animationDelay: '120ms' }}>
+        <StatusCard
+          state={state}
+          session={session}
+          mine={mine}
+          spotsLeft={Math.max(0, capacity - confirmed)}
+          waiting={waiting}
+          weekStart={weekStart}
         />
-      )}
+      </div>
+
+      <div className="animate-rise" style={{ animationDelay: '180ms' }}>
+        <WeekTimeline weekStart={weekStart} session={session} state={state} />
+      </div>
     </div>
   )
 }
+

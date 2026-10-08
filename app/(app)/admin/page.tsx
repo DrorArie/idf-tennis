@@ -1,231 +1,123 @@
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-import { createAdminClient, ensureActiveWeekOpen, openWeek } from '@/lib/sessions'
-import { getActiveWeekStart, getExerciseDate } from '@/lib/week'
+import { requireAdmin } from '@/lib/auth'
+import { createAdminClient, ensureActiveWeekOpen } from '@/lib/sessions'
+import {
+  closesAt, exerciseDay, formatLongDate, formatWhen, getActiveWeekStart,
+  isRegistrationWindow, opensAt, registrationState,
+} from '@/lib/week'
+import StatusPanel from './StatusPanel'
+import GroupCard, { type Person } from './GroupCard'
+import UserList, { type UserRow } from './UserList'
 
-async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: profile } = await supabase
-    .from('profiles').select('is_admin').eq('id', user.id).single()
-  return profile?.is_admin ? supabase : null
+interface SessionRow {
+  id: string
+  week_start: string
+  time_slot: string
+  skill_level: string
+  capacity: number
+  is_open: boolean
+  created_at: string
+  closes_at?: string | null
 }
 
-const TIME_LABEL: Record<string, string> = {
-  '07:00:00': '07:00',
-  '08:00:00': '08:00',
-  '09:00:00': '09:00',
-  '10:00:00': '10:00',
-  '11:00:00': '11:00',
-}
 
-const SKILL_HE: Record<string, string> = {
-  beginner: 'מתחילים',
-  amateur: 'חובבנים',
-  expert_a: 'מתקדמים א׳',
-  expert_b: 'מתקדמים ב׳',
+async function loadWeek(weekStart: string) {
+  const { data } = await createAdminClient()
+    .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
+  return (data ?? []) as SessionRow[]
 }
 
 export default async function AdminPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!profile?.is_admin) redirect('/dashboard')
-
-  await ensureActiveWeekOpen(createAdminClient())
+  const { profile: me } = await requireAdmin()
+  const admin = createAdminClient()
   const weekStart = getActiveWeekStart()
 
-  const { data: sessions } = await supabase
-    .from('sessions')
-    .select('id, time_slot, skill_level, is_open, capacity')
-    .eq('week_start', weekStart)
-    .order('time_slot')
-
-  const sessionIds = (sessions ?? []).map((s) => s.id)
-
-  const { data: weekRegs } = sessionIds.length > 0
-    ? await supabase
-        .from('registrations')
-        .select('session_id, user_id, profiles(name, phone, total_signups)')
-        .in('session_id', sessionIds)
-        .eq('status', 'confirmed')
-    : { data: [] }
-
-  const { data: waitlistRegs } = sessionIds.length > 0
-    ? await supabase
-        .from('registrations')
-        .select('session_id, user_id, waitlist_position, profiles(name, phone)')
-        .in('session_id', sessionIds)
-        .eq('status', 'waitlist')
-        .order('waitlist_position', { ascending: true })
-    : { data: [] }
-
-  const regsBySession: Record<string, any[]> = {}
-  ;(weekRegs ?? []).forEach((r: any) => {
-    if (!regsBySession[r.session_id]) regsBySession[r.session_id] = []
-    regsBySession[r.session_id].push(r)
-  })
-
-  const waitlistBySession: Record<string, any[]> = {}
-  ;(waitlistRegs ?? []).forEach((r: any) => {
-    if (!waitlistBySession[r.session_id]) waitlistBySession[r.session_id] = []
-    waitlistBySession[r.session_id].push(r)
-  })
-
-  const { data: allUsers } = await supabase
-    .from('profiles')
-    .select('id, name, phone, idf_number, skill_level, total_signups, is_blacklisted, is_admin')
-    .order('total_signups', { ascending: false })
-
-  async function openWeekSessions() {
-    'use server'
-    if (!(await requireAdmin())) return
-    await openWeek(createAdminClient(), getActiveWeekStart())
-    revalidatePath('/admin')
-    revalidatePath('/dashboard')
+  const [initialSessions, { data: users }] = await Promise.all([
+    loadWeek(weekStart),
+    admin.from('profiles')
+      .select('id, name, phone, email, skill_level, service_type, total_signups, is_blacklisted, is_admin')
+      .order('total_signups', { ascending: false }),
+  ])
+  let sessions = initialSessions
+  if (sessions.length === 0 && isRegistrationWindow(weekStart)) {
+    await ensureActiveWeekOpen()
+    sessions = await loadWeek(weekStart)
   }
 
-  async function toggleBlacklist(formData: FormData) {
-    'use server'
-    const userId = formData.get('userId') as string
-    const currentStatus = formData.get('currentStatus') === 'true'
-    const supabase = await requireAdmin()
-    if (!supabase) return
-    await supabase.from('profiles').update({ is_blacklisted: !currentStatus }).eq('id', userId)
-    revalidatePath('/admin')
-  }
+  const { data: regs } = sessions.length
+    ? await admin
+        .from('registrations')
+        .select('session_id, user_id, status, waitlist_position, created_at, profiles(name, phone, total_signups)')
+        .in('session_id', sessions.map((s) => s.id))
+        .order('created_at', { ascending: true })
+    : { data: [] }
 
-  const weekDateStr = getExerciseDate(weekStart).toLocaleDateString('he-IL', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
+  const people = (regs ?? []) as unknown as (Person & { session_id: string })[]
+  const state = registrationState(sessions[0], weekStart)
+  const confirmedTotal = people.filter((p) => p.status === 'confirmed').length
+  const waitingTotal = people.filter((p) => p.status === 'waitlist').length
+  const capacityTotal = sessions.reduce((n, s) => n + s.capacity, 0)
+  const needsMigration = sessions.length > 0 && !('closes_at' in sessions[0])
+  const manualOpen = state === 'open' && sessions[0]?.closes_at === null
+  const deadline = sessions[0]?.closes_at ? new Date(sessions[0].closes_at) : closesAt(weekStart)
+
+  let detail: string
+  if (state === 'open') detail = manualOpen ? 'נפתחה ידנית — פתוחה עד שתסגור' : `נסגרת אוטומטית ${formatWhen(deadline)}`
+  else if (state === 'upcoming') detail = `נפתחת אוטומטית ${formatWhen(opensAt(weekStart))}`
+  else if (state === 'closed') detail = 'אפשר לפתוח מחדש ידנית — תישאר פתוחה עד שתסגור'
+  else detail = 'השבוע הבא ייפתח ביום שלישי ב־12:00'
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">לוח ניהול</h2>
-          <p className="text-sm text-gray-500">שבוע של {weekDateStr}</p>
-        </div>
-        <form action={openWeekSessions}>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            {(sessions ?? []).length > 0 ? '🔄 פתח מחדש' : '🟢 פתח השבוע'}
-          </button>
-        </form>
+    <div className="space-y-5">
+      <div className="animate-rise">
+        <h1 className="font-display font-bold text-5xl leading-none text-court-deep">לוח ניהול</h1>
+        <p className="text-ink-soft mt-1">אימון {formatLongDate(exerciseDay(weekStart))}</p>
       </div>
 
-      <section>
-        <h3 className="text-base font-semibold text-gray-700 mb-3">הרשמות השבוע</h3>
+      {needsMigration && (
+        <div className="rounded-2xl bg-wait/15 border border-wait/40 px-4 py-3 text-sm animate-rise">
+          <p className="font-semibold">נדרש עדכון קטן למסד הנתונים</p>
+          <p className="text-ink-soft">בלי העדכון ההרשמה לא תיסגר אוטומטית בחמישי. הרץ את הקובץ 005 ב־Supabase SQL Editor.</p>
+        </div>
+      )}
 
-        {(sessions ?? []).length === 0 ? (
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100">
-            <p className="text-gray-400 text-sm">עדיין לא נוצרו אימונים השבוע</p>
-          </div>
+      <div className="animate-rise" style={{ animationDelay: '60ms' }}>
+        <StatusPanel
+          state={state}
+          detail={detail}
+          createdAt={sessions[0]?.created_at ?? null}
+          confirmed={confirmedTotal}
+          waiting={waitingTotal}
+          free={Math.max(0, capacityTotal - confirmedTotal)}
+          hasSessions={sessions.length > 0}
+        />
+      </div>
+
+      {/* Groups */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold">קבוצות</h2>
+        {sessions.length === 0 ? (
+          <p className="rounded-[24px] bg-white border border-line p-6 text-center text-ink-soft">
+            האימונים לשבוע הזה עדיין לא נוצרו.
+          </p>
         ) : (
-          (sessions ?? []).map((session) => {
-            const confirmed = regsBySession[session.id] ?? []
-            const waitlist = waitlistBySession[session.id] ?? []
-            return (
-              <div key={session.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-3 overflow-hidden">
-                <div className="p-4 bg-gray-50 flex items-center justify-between border-b border-gray-100">
-                  <div>
-                    <p className="font-semibold text-gray-800">{TIME_LABEL[session.time_slot]}</p>
-                    <p className="text-sm text-gray-500">
-                      {SKILL_HE[session.skill_level]} · {confirmed.length}/{session.capacity} רשומים
-                      {waitlist.length > 0 && ` · ${waitlist.length} ממתינים`}
-                    </p>
-                  </div>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${session.is_open ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {session.is_open ? 'פתוח' : 'סגור'}
-                  </span>
-                </div>
-
-                {confirmed.length === 0 ? (
-                  <p className="text-sm text-gray-400 p-4 text-center">אין רשומים עדיין</p>
-                ) : (
-                  confirmed.map((reg: any) => (
-                    <div key={reg.user_id} className="px-4 py-3 border-b border-gray-50 last:border-0 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{reg.profiles?.name}</p>
-                        <p className="text-xs text-gray-400">{reg.profiles?.phone}</p>
-                      </div>
-                      <span className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-medium">
-                        {reg.profiles?.total_signups} אימונים
-                      </span>
-                    </div>
-                  ))
-                )}
-
-                {waitlist.length > 0 && (
-                  <>
-                    <div className="px-4 py-2 bg-yellow-50 border-t border-yellow-100">
-                      <p className="text-xs font-semibold text-yellow-700">רשימת המתנה</p>
-                    </div>
-                    {waitlist.map((reg: any) => (
-                      <div key={reg.user_id} className="px-4 py-3 border-b border-gray-50 last:border-0 flex items-center justify-between bg-yellow-50/30">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">#{reg.waitlist_position} {reg.profiles?.name}</p>
-                          <p className="text-xs text-gray-400">{reg.profiles?.phone}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            )
-          })
+          sessions.map((s, i) => (
+            <div key={s.id} className="animate-rise" style={{ animationDelay: `${120 + i * 50}ms` }}>
+              <GroupCard
+                session={{ id: s.id, time: s.time_slot.slice(0, 5), skill: s.skill_level, capacity: s.capacity }}
+                dateLabel={formatLongDate(exerciseDay(weekStart))}
+                people={people.filter((p) => p.session_id === s.id)}
+              />
+            </div>
+          ))
         )}
       </section>
 
-      <section>
-        <h3 className="text-base font-semibold text-gray-700 mb-3">
-          כל המשתתפים ({(allUsers ?? []).length})
-        </h3>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {(allUsers ?? []).map((u) => (
-            <div key={u.id} className={`px-4 py-3 border-b border-gray-50 last:border-0 ${u.is_blacklisted ? 'bg-red-50' : ''}`}>
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-800 truncate">{u.name}</p>
-                    {u.is_admin && (
-                      <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">מנהל</span>
-                    )}
-                    {u.is_blacklisted && (
-                      <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-medium">חסום</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {u.phone} · {SKILL_HE[u.skill_level]}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 mr-2 flex-shrink-0">
-                  <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">{u.total_signups}</span>
-                  {!u.is_admin && (
-                    <form action={toggleBlacklist}>
-                      <input type="hidden" name="userId" value={u.id} />
-                      <input type="hidden" name="currentStatus" value={String(u.is_blacklisted)} />
-                      <button type="submit" className={`text-xs px-2 py-0.5 rounded-full font-medium transition-colors ${
-                        u.is_blacklisted ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}>
-                        {u.is_blacklisted ? 'בטל חסימה' : 'חסום'}
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Users */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold">משתתפים ({(users ?? []).length})</h2>
+        <UserList users={(users ?? []) as UserRow[]} myId={me!.id} />
       </section>
     </div>
   )

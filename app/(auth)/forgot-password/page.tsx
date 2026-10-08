@@ -1,76 +1,56 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { Field, FormError, SubmitButton } from '@/components/Form'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [sentTo, setSentTo] = useState('')
   const [error, setError] = useState('')
   const supabase = createClient()
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const email = String(new FormData(e.currentTarget).get('email')).trim()
     setLoading(true)
     setError('')
-
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     })
-
     setLoading(false)
-    if (error) {
-      setError('שגיאה בשליחת המייל. בדוק את הכתובת ונסה שוב.')
-    } else {
-      setSent(true)
-    }
+    if (error) setError('שגיאה בשליחת המייל. בדוק/י את הכתובת ונסה/י שוב.')
+    else setSentTo(email)
   }
 
-  if (sent) {
+  if (sentTo) {
     return (
-      <div className="text-center space-y-4">
-        <p className="text-4xl">📧</p>
-        <h2 className="text-xl font-semibold text-gray-800">בדוק את תיבת הדואר</h2>
-        <p className="text-sm text-gray-600">שלחנו לך קישור לאיפוס הסיסמה לכתובת <span className="font-medium">{email}</span></p>
-        <Link href="/login" className="block text-sm text-blue-600 hover:underline mt-4">
-          חזרה לכניסה
-        </Link>
+      <div className="text-center space-y-3 py-2 animate-pop">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-ball grid place-items-center">
+          <svg className="w-7 h-7 text-court-night" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold">בדוק/י את תיבת המייל</h2>
+        <p className="text-ink-soft text-sm">שלחנו קישור לאיפוס הסיסמה אל <span className="font-medium text-ink" dir="ltr">{sentTo}</span></p>
+        <a href="/login" className="inline-block text-sm font-semibold text-court hover:underline pt-2">חזרה לכניסה</a>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-800">שכחתי סיסמה</h2>
-      <p className="text-sm text-gray-500">הכנס את האימייל שלך ונשלח לך קישור לאיפוס הסיסמה.</p>
-
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
-      )}
-
+    <div className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-        />
+        <h2 className="text-2xl font-bold">שכחתי סיסמה</h2>
+        <p className="text-sm text-ink-soft mt-1">נשלח לך קישור לבחירת סיסמה חדשה.</p>
       </div>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-      >
-        {loading ? 'שולח...' : 'שלח קישור לאיפוס'}
-      </button>
-
-      <p className="text-sm text-center text-gray-600">
-        <Link href="/login" className="text-blue-600 hover:underline">חזרה לכניסה</Link>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <FormError>{error}</FormError>}
+        <Field label="אימייל" name="email" type="email" autoComplete="email" required dir="ltr" className="text-right" />
+        <SubmitButton pendingLabel="שולח…" pending={loading}>שליחת קישור</SubmitButton>
+      </form>
+      <p className="text-sm text-center">
+        <a href="/login" className="text-ink-soft hover:text-court">חזרה לכניסה</a>
       </p>
-    </form>
+    </div>
   )
 }

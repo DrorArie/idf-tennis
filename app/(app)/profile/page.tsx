@@ -1,156 +1,124 @@
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
-import { getActiveWeekStart, getExerciseDate } from '@/lib/week'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { requireMember } from '@/lib/auth'
+import { createAdminClient } from '@/lib/sessions'
+import { hasActiveRegistration } from '@/lib/registrations'
+import { SKILL_NAME, exerciseDay, formatLongDate, sessionStartsAt } from '@/lib/week'
+import { signOutAction } from '../actions'
+import ProfileForm from './ProfileForm'
 
-// A registration for the current week is tied to the user's skill group,
-// so changing level while registered would orphan it.
-async function hasActiveRegistration(supabase: SupabaseClient, userId: string) {
-  const { data } = await supabase
-    .from('registrations')
-    .select('id, sessions!inner(week_start)')
-    .eq('user_id', userId)
-    .eq('sessions.week_start', getActiveWeekStart())
-    .limit(1)
-  return (data ?? []).length > 0
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  confirmed: 'רשום',
-  waitlist: 'המתנה',
+interface HistoryRow {
+  id: string
+  status: string
+  waitlist_position: number | null
+  sessions: { time_slot: string; week_start: string; skill_level: string } | null
 }
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const { user, profile } = await requireMember()
+  if (!profile) redirect('/dashboard')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
-
-  const { data: myRegistrations } = await supabase
-    .from('registrations')
-    .select('id, status, waitlist_position, created_at, sessions(time_slot, week_start, skill_level)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(20)
-
-  const skillLocked = await hasActiveRegistration(supabase, user.id)
-
-  async function updateSkillLevel(formData: FormData) {
-    'use server'
-    const skill_level = formData.get('skill_level') as string
-    const valid = ['beginner', 'amateur', 'expert_a', 'expert_b']
-    if (!valid.includes(skill_level)) return
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    if (await hasActiveRegistration(supabase, user.id)) return
-    await supabase.from('profiles').update({ skill_level }).eq('id', user.id)
-    revalidatePath('/profile')
-    revalidatePath('/dashboard')
-  }
-
-  async function signOut() {
-    'use server'
-    const supabase = await createClient()
-    await supabase.auth.signOut()
-    redirect('/login')
-  }
+  const [{ data }, skillLocked] = await Promise.all([
+    createAdminClient()
+      .from('registrations')
+      .select('id, status, waitlist_position, sessions(time_slot, week_start, skill_level)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30),
+    hasActiveRegistration(user.id),
+  ])
+  const history = (data ?? []) as unknown as HistoryRow[]
+  const now = new Date()
+  const attended = history.filter(
+    (r) => r.status === 'confirmed' && r.sessions && sessionStartsAt(r.sessions.week_start, r.sessions.time_slot) < now
+  ).length
 
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-4 mb-5">
-          <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600">
-            {profile?.name?.charAt(0).toUpperCase()}
+      <section className="relative overflow-hidden rounded-[28px] bg-court-deep text-white p-6 court-lines animate-rise">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-ball text-court-night grid place-items-center font-bold text-3xl">
+            {profile.name.charAt(0)}
           </div>
-          <div>
-            <p className="font-bold text-gray-900 text-lg">{profile?.name}</p>
-            <form action={updateSkillLevel} className="flex items-center gap-2 mt-0.5">
-              <select
-                name="skill_level"
-                defaultValue={profile?.skill_level ?? ''}
-                disabled={skillLocked}
-                className="text-sm text-gray-500 border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-1 cursor-pointer disabled:cursor-default"
-              >
-                <option value="beginner">מתחיל (קבוצת 7:00)</option>
-                <option value="amateur">חובבן (קבוצת 8:00)</option>
-                <option value="expert_a">מתקדם א׳ (קבוצת 9:00)</option>
-                <option value="expert_b">מתקדם ב׳ (קבוצת 10:00)</option>
-              </select>
-              {!skillLocked && (
-                <button type="submit" className="text-xs text-blue-500 hover:text-blue-700 font-medium">שמור</button>
-              )}
-            </form>
-            {skillLocked && (
-              <p className="text-xs text-gray-400 mt-1">כדי לשנות רמה, בטל קודם את ההרשמה לאימון השבוע</p>
-            )}
+          <div className="min-w-0">
+            <p className="text-2xl font-bold truncate">{profile.name}</p>
+            <p className="text-white/70 text-sm">
+              {SKILL_NAME[profile.skill_level]} · {profile.service_type === 'keva' ? 'קבע' : 'אזרח עובד צה״ל'}
+            </p>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-blue-50 rounded-xl p-3 text-center">
-            <p className="text-3xl font-bold text-blue-600">{profile?.total_signups ?? 0}</p>
-            <p className="text-xs text-blue-500 mt-0.5 font-medium">סה״כ אימונים</p>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3 text-center">
-            <p className="text-sm font-semibold text-gray-700">{profile?.service_type === 'keva' ? 'קבע' : 'אזרח עובד צה"ל'}</p>
-            <p className="text-xs text-gray-400 mt-0.5">סוג שירות</p>
-          </div>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <Stat value={profile.total_signups} label="הרשמות לאימונים" />
+          <Stat value={attended} label="אימונים שהתקיימו" />
         </div>
+      </section>
 
-        <div className="space-y-2 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400">📧</span>
-            <span>{user.email}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400">📱</span>
-            <span>{profile?.phone}</span>
-          </div>
-        </div>
-      </div>
+      <section className="rounded-[24px] bg-white border border-line p-5 animate-rise" style={{ animationDelay: '60ms' }}>
+        <h2 className="text-lg font-bold mb-4">הפרטים שלי</h2>
+        <ProfileForm
+          name={profile.name}
+          phone={profile.phone}
+          email={user.email ?? ''}
+          skillLevel={profile.skill_level}
+          skillLocked={skillLocked}
+        />
+      </section>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">ההרשמות שלי</h3>
-        </div>
-
-        {(myRegistrations ?? []).length === 0 ? (
-          <p className="text-sm text-gray-500 p-6 text-center">עדיין לא נרשמת לאף אימון</p>
+      <section className="rounded-[24px] bg-white border border-line overflow-hidden animate-rise" style={{ animationDelay: '120ms' }}>
+        <h2 className="text-lg font-bold px-5 pt-5 pb-3">ההרשמות שלי</h2>
+        {history.length === 0 ? (
+          <p className="text-ink-soft text-sm px-5 pb-6">עדיין לא נרשמת לאף אימון.</p>
         ) : (
-          (myRegistrations ?? []).map((reg: any) => (
-            <div key={reg.id} className="p-4 border-b border-gray-50 last:border-0 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-800">
-                  {reg.sessions?.time_slot?.slice(0, 5)} —{' '}
-                  {reg.sessions?.week_start && getExerciseDate(reg.sessions.week_start).toLocaleDateString('he-IL', {
-                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-                  })}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {({ beginner: 'מתחילים', amateur: 'חובבנים', expert_a: 'מתקדמים א׳', expert_b: 'מתקדמים ב׳' } as Record<string,string>)[reg.sessions?.skill_level] ?? reg.sessions?.skill_level}
-                </p>
-              </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                reg.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-              }`}>
-                {reg.status === 'waitlist' ? `המתנה #${reg.waitlist_position}` : STATUS_LABEL[reg.status] ?? reg.status}
-              </span>
-            </div>
-          ))
+          <ul>
+            {history.map((r) => {
+              if (!r.sessions) return null
+              const past = sessionStartsAt(r.sessions.week_start, r.sessions.time_slot) < now
+              return (
+                <li key={r.id} className="flex items-center justify-between gap-3 px-5 py-3 border-t border-line/70">
+                  <div>
+                    <p className="font-medium">{formatLongDate(exerciseDay(r.sessions.week_start))}</p>
+                    <p className="text-xs text-ink-soft" dir="rtl">
+                      {r.sessions.time_slot.slice(0, 5)} · {SKILL_NAME[r.sessions.skill_level] ?? r.sessions.skill_level}
+                    </p>
+                  </div>
+                  <StatusPill status={r.status} position={r.waitlist_position} past={past} />
+                </li>
+              )
+            })}
+          </ul>
         )}
-      </div>
+      </section>
 
-      <form action={signOut}>
-        <button type="submit" className="w-full border border-gray-200 text-gray-600 rounded-xl py-3 text-sm font-medium hover:bg-gray-50 transition-colors">
+      <form action={signOutAction}>
+        <button type="submit" className="w-full rounded-2xl border-2 border-line py-3 text-ink-soft font-medium hover:bg-white transition-colors cursor-pointer">
           התנתקות
         </button>
       </form>
     </div>
+  )
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="rounded-2xl bg-white/8 border border-white/15 px-4 py-3">
+      <p className="font-display font-bold text-5xl leading-none text-ball">{value}</p>
+      <p className="text-xs text-white/70 mt-1">{label}</p>
+    </div>
+  )
+}
+
+function StatusPill({ status, position, past }: { status: string; position: number | null; past: boolean }) {
+  if (status === 'confirmed') {
+    return (
+      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${past ? 'bg-chalk text-ink-soft' : 'bg-win/12 text-win'}`}>
+        {past ? 'השתתפת' : 'רשום/ה'}
+      </span>
+    )
+  }
+  return (
+    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-wait/15 text-[#a87412]">
+      {past ? 'לא נכנסת' : `המתנה #${position}`}
+    </span>
   )
 }

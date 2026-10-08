@@ -2,10 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Field, FormError, SubmitButton } from '@/components/Form'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -13,71 +12,41 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('reason') === 'blacklisted') {
-      supabase.auth.signOut().then(() => setError('החשבון שלך נחסם. לפרטים פנה למנהל האימונים.'))
+      supabase.auth.signOut().then(() => setError('החשבון שלך נחסם. לפרטים פנה/י למנהל האימונים.'))
     }
   }, [supabase])
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const form = new FormData(e.currentTarget)
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({
+      email: String(form.get('email')).trim(),
+      password: String(form.get('password')),
+    })
     if (error) {
       setError('אימייל או סיסמה שגויים')
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      router.replace('/dashboard')
       router.refresh()
     }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <h2 className="text-2xl font-bold">כניסה</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800">כניסה</h2>
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
-        )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {loading ? 'מתחבר...' : 'כניסה'}
-        </button>
+        {error && <FormError>{error}</FormError>}
+        <Field label="אימייל" name="email" type="email" autoComplete="email" required dir="ltr" className="text-right" />
+        <Field label="סיסמה" name="password" type="password" autoComplete="current-password" required dir="ltr" className="text-right" />
+        <SubmitButton pendingLabel="מתחבר…" pending={loading}>כניסה</SubmitButton>
       </form>
-      <p className="text-sm text-center text-gray-600">
-        <button
-          type="button"
-          onClick={() => { window.location.href = '/forgot-password' }}
-          className="text-blue-600 hover:underline bg-transparent border-0 p-0 cursor-pointer text-sm"
-        >
-          שכחתי סיסמה
-        </button>
-        {' · '}
-        אין לך חשבון?{' '}
-        <a href="/register" className="text-blue-600 hover:underline">הרשמה</a>
-      </p>
+      <div className="flex items-center justify-between text-sm">
+        <a href="/forgot-password" className="text-ink-soft hover:text-court">שכחתי סיסמה</a>
+        <a href="/register" className="font-semibold text-court hover:underline">משתמש/ת חדש/ה? הרשמה</a>
+      </div>
     </div>
   )
 }

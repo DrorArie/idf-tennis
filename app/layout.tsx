@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Karantina, Rubik } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const rubik = Rubik({
@@ -30,7 +31,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl" className={`${rubik.variable} ${karantina.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <Script src="https://dror-apps.vercel.app/menu.js" strategy="afterInteractive" />
+      </body>
     </html>
   );
 }

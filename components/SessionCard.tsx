@@ -35,9 +35,10 @@ interface Props {
   myRegistration: Registration | null
   userSkillLevel: string
   registrationClosed: boolean
+  cancellationClosed: boolean
 }
 
-export default function SessionCard({ session, myRegistration, userSkillLevel, registrationClosed }: Props) {
+export default function SessionCard({ session, myRegistration, userSkillLevel, registrationClosed, cancellationClosed }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -78,6 +79,15 @@ export default function SessionCard({ session, myRegistration, userSkillLevel, r
     )
   ) : null
 
+  const cancelButton = (
+    <button
+      onClick={handleCancel} disabled={loading}
+      className="w-full border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
+    >
+      {loading ? '...' : 'ביטול הרשמה'}
+    </button>
+  )
+
   return (
     <div className={`bg-white rounded-2xl p-4 shadow-sm border-2 transition-colors ${isMyLevel ? 'border-blue-200' : 'border-gray-100'}`}>
       <div className="flex items-start justify-between mb-3">
@@ -92,11 +102,19 @@ export default function SessionCard({ session, myRegistration, userSkillLevel, r
       </div>
 
       {!session.is_open || registrationClosed ? (
-        <div className="bg-gray-50 rounded-xl p-3 text-center">
-          <p className="text-sm text-gray-400">
-            {registrationClosed ? 'ההרשמה לאימון זה נסגרה' : 'נפתח בכל יום שלישי בשעה 12:00'}
-          </p>
-        </div>
+        <>
+          <div className="bg-gray-50 rounded-xl p-3 text-center">
+            <p className="text-sm text-gray-400">
+              {registrationClosed ? 'ההרשמה לאימון זה נסגרה' : 'נפתח בכל יום שלישי בשעה 12:00'}
+            </p>
+          </div>
+          {registrationClosed && myRegistration && !cancellationClosed && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-400 text-center mb-2">לא תגיע? בטל עד חמישי בחצות כדי לפנות את המקום</p>
+              {cancelButton}
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="mb-4">
@@ -116,12 +134,7 @@ export default function SessionCard({ session, myRegistration, userSkillLevel, r
 
           {isMyLevel ? (
             myRegistration ? (
-              <button
-                onClick={handleCancel} disabled={loading}
-                className="w-full border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors"
-              >
-                {loading ? '...' : 'ביטול הרשמה'}
-              </button>
+              cancelButton
             ) : (
               <button
                 onClick={handleSignUp} disabled={loading}

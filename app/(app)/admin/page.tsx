@@ -118,7 +118,7 @@ export default async function AdminPage() {
             type="submit"
             className="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
           >
-            {(sessions ?? []).length > 0 ? '🔄 אפס השבוע' : '🟢 פתח השבוע'}
+            {(sessions ?? []).length > 0 ? '🔄 פתח מחדש' : '🟢 פתח השבוע'}
           </button>
         </form>
       </div>

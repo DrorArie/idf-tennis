@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SessionCard from '@/components/SessionCard'
 import { createAdminClient, ensureActiveWeekOpen } from '@/lib/sessions'
-import { getActiveWeekStart, getExerciseDate, hasRegistrationClosed } from '@/lib/week'
+import { getActiveWeekStart, getExerciseDate, hasCancellationClosed, hasRegistrationClosed } from '@/lib/week'
 
 const SKILL_LABEL: Record<string, string> = {
   beginner: 'מתחילים (7:00)',
@@ -100,6 +100,7 @@ export default async function DashboardPage() {
           myRegistration={mySkillReg ?? null}
           userSkillLevel={profile?.skill_level ?? ''}
           registrationClosed={registrationClosed}
+          cancellationClosed={hasCancellationClosed(weekStart)}
         />
       )}
     </div>

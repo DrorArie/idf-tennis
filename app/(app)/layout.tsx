@@ -20,10 +20,8 @@ export default async function AppLayout({
     .eq('id', user.id)
     .single()
 
-  if (profile?.is_blacklisted) {
-    await supabase.auth.signOut()
-    redirect('/login?reason=blacklisted')
-  }
+  // Cookies can't be cleared from a layout, so the login page does the sign-out
+  if (profile?.is_blacklisted) redirect('/login?reason=blacklisted')
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

@@ -8,8 +8,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "IDF Tennis",
-  description: "Weekly tennis session signup for IDF soldiers",
+  title: "טניס צה״ל",
+  description: "הרשמה לאימוני טניס שבועיים",
 };
 
 export default function RootLayout({

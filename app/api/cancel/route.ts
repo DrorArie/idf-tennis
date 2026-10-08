@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 import { createNotification } from '@/lib/notifications'
 import { createAdminClient } from '@/lib/sessions'
+import { hasCancellationClosed } from '@/lib/week'
 
 const admin = createAdminClient()
 
@@ -20,6 +21,12 @@ export async function POST(req: NextRequest) {
     .eq('session_id', session_id).eq('user_id', user.id).maybeSingle()
 
   if (!reg) return NextResponse.json({ error: 'לא נמצאה הרשמה לביטול' }, { status: 404 })
+
+  const { data: session } = await supabase
+    .from('sessions').select('week_start').eq('id', session_id).single()
+  if (session && hasCancellationClosed(session.week_start)) {
+    return NextResponse.json({ error: 'כבר לא ניתן לבטל — האימון מחר. עדכן את המנהל.' }, { status: 400 })
+  }
 
   if (reg.status === 'confirmed') {
     // Delete the confirmed registration

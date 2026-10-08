@@ -108,7 +108,9 @@ export default function NotificationBell({ userId }: { userId: string }) {
                 >
                   <p className="text-sm text-gray-800">{n.message}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {new Date(n.created_at).toLocaleString('en-IL')}
+                    {new Date(n.created_at).toLocaleString('he-IL', {
+                      timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                    })}
                   </p>
                 </div>
               ))

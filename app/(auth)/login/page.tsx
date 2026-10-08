@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,6 +10,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('reason') === 'blacklisted') {
+      supabase.auth.signOut().then(() => setError('החשבון שלך נחסם. לפרטים פנה למנהל האימונים.'))
+    }
+  }, [supabase])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

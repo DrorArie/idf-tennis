@@ -3,12 +3,19 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { getActiveWeekStart, getExerciseDate } from '@/lib/week'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-const SKILL_LABEL: Record<string, string> = {
-  beginner: 'מתחיל (קבוצת 7:00)',
-  amateur: 'חובבן (קבוצת 8:00)',
-  expert_a: 'מתקדם א׳ (קבוצת 9:00-10:00)',
-  expert_b: 'מתקדם ב׳ (קבוצת 10:00-11:00)',
+// A registration for the current week is tied to the user's skill group,
+// so changing level while registered would orphan it.
+async function hasActiveRegistration(supabase: SupabaseClient, userId: string) {
+  const { data } = await supabase
+    .from('registrations')
+    .select('id, sessions!inner(week_start)')
+    .eq('user_id', userId)
+    .eq('sessions.week_start', getActiveWeekStart())
+    .limit(1)
+  return (data ?? []).length > 0
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -21,7 +28,7 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from('profiles').select('*').eq('id', user.id).single()
 
   const { data: myRegistrations } = await supabase
@@ -31,6 +38,8 @@ export default async function ProfilePage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
+  const skillLocked = await hasActiveRegistration(supabase, user.id)
+
   async function updateSkillLevel(formData: FormData) {
     'use server'
     const skill_level = formData.get('skill_level') as string
@@ -39,8 +48,10 @@ export default async function ProfilePage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    if (await hasActiveRegistration(supabase, user.id)) return
     await supabase.from('profiles').update({ skill_level }).eq('id', user.id)
     revalidatePath('/profile')
+    revalidatePath('/dashboard')
   }
 
   async function signOut() {
@@ -63,15 +74,21 @@ export default async function ProfilePage() {
               <select
                 name="skill_level"
                 defaultValue={profile?.skill_level ?? ''}
-                className="text-sm text-gray-500 border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-1 cursor-pointer"
+                disabled={skillLocked}
+                className="text-sm text-gray-500 border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-1 cursor-pointer disabled:cursor-default"
               >
                 <option value="beginner">מתחיל (קבוצת 7:00)</option>
                 <option value="amateur">חובבן (קבוצת 8:00)</option>
                 <option value="expert_a">מתקדם א׳ (קבוצת 9:00)</option>
                 <option value="expert_b">מתקדם ב׳ (קבוצת 10:00)</option>
               </select>
-              <button type="submit" className="text-xs text-blue-500 hover:text-blue-700 font-medium">שמור</button>
+              {!skillLocked && (
+                <button type="submit" className="text-xs text-blue-500 hover:text-blue-700 font-medium">שמור</button>
+              )}
             </form>
+            {skillLocked && (
+              <p className="text-xs text-gray-400 mt-1">כדי לשנות רמה, בטל קודם את ההרשמה לאימון השבוע</p>
+            )}
           </div>
         </div>
 
@@ -111,8 +128,8 @@ export default async function ProfilePage() {
               <div>
                 <p className="text-sm font-medium text-gray-800">
                   {reg.sessions?.time_slot?.slice(0, 5)} —{' '}
-                  {new Date(reg.sessions?.week_start + 'T00:00:00').toLocaleDateString('he-IL', {
-                    day: 'numeric', month: 'short', year: 'numeric',
+                  {reg.sessions?.week_start && getExerciseDate(reg.sessions.week_start).toLocaleDateString('he-IL', {
+                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
                   })}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">

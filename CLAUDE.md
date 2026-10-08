@@ -106,6 +106,9 @@ Each user can only register for their own skill group's session.
 - **Sessions close:** Thursday 12:00 Israel time. The signup API rejects anything after the deadline regardless of `is_open`; the cron (`0 10 * * 4` UTC) then sets `is_open = false`.
 - **proxy.ts** skips `/api/*` — API routes do their own auth (crons need to reach their handler without a login cookie).
 - **Signup flow:** Confirmed directly if capacity available; otherwise added to `waitlist` with a position number. In-app + email notification sent on waitlist join.
+- **Cancel deadline:** Cancelling stays possible after registration closes, until Thursday midnight (`hasCancellationClosed`), so no-shows can free their spot for the waitlist.
+- **Skill change lock:** Profile page blocks changing skill level while the user has a registration for the active week.
+- **Blocked users:** `(app)/layout` redirects to `/login?reason=blacklisted`; proxy lets that through even when signed in, and the login page signs them out and shows a message.
 - **Cancel flow:** If confirmed → spot freed, next waitlisted person is **automatically promoted to confirmed** (no user action needed). Both the promoted user and all remaining waitlisters get in-app + email notifications with updated positions.
 - **No pending_confirmation:** This status was removed. Promotion is instant and automatic.
 - **Who can register:** `keva` and `ezrach` service types only. מילואים / חובה have no registration path.

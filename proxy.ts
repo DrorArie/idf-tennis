@@ -41,8 +41,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // A reset link signs the user in, so they must be allowed to stay on /reset-password
-  if (user && isPublic && !pathname.startsWith('/reset-password')) {
+  // A reset link signs the user in, so they must be allowed to stay on /reset-password.
+  // A blocked user is sent to /login?reason=blacklisted still signed in; the page signs them out.
+  const blockedNotice = pathname.startsWith('/login') && request.nextUrl.searchParams.get('reason') === 'blacklisted'
+  if (user && isPublic && !pathname.startsWith('/reset-password') && !blockedNotice) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

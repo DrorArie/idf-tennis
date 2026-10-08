@@ -55,6 +55,12 @@ export function hasRegistrationClosed(weekStart: string, now = new Date()): bool
   return israelNow(now) >= fromDateStr(weekStart, 2, CLOSE_HOUR)
 }
 
+// Cancelling stays possible after registration closes (frees the spot for the waitlist),
+// until Thursday midnight — the night before the exercise.
+export function hasCancellationClosed(weekStart: string, now = new Date()): boolean {
+  return israelNow(now) >= fromDateStr(weekStart, 3)
+}
+
 // True between Tuesday 12:00 and Thursday 12:00 of the given week.
 export function isRegistrationWindow(weekStart: string, now = new Date()): boolean {
   return hasRegistrationOpened(weekStart, now) && !hasRegistrationClosed(weekStart, now)

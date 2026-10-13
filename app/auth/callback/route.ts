@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     const user = data?.user
+    if (error) console.error('oauth exchange error', error.message)
     if (!error && user) {
       const meta = user.user_metadata ?? {}
       const isNew = Date.now() - new Date(user.created_at).getTime() < 5 * 60 * 1000
@@ -24,5 +25,10 @@ export async function GET(request: Request) {
     }
   }
 
+  console.error('oauth callback failed', {
+    hasCode: !!code,
+    error: searchParams.get('error'),
+    description: searchParams.get('error_description'),
+  })
   return NextResponse.redirect(`${origin}/login?reason=oauth`)
 }

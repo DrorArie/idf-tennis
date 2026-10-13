@@ -16,8 +16,18 @@ const karantina = Karantina({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://idf-tennis.vercel.app"),
   title: "טניס צה״ל",
   description: "הרשמה לאימוני טניס שבועיים",
+  applicationName: "טניס צה״ל",
+  appleWebApp: { capable: true, title: "טניס צה״ל" },
+  openGraph: {
+    title: "טניס צה״ל",
+    description: "הרשמה לאימוני טניס שבועיים",
+    siteName: "טניס צה״ל",
+    locale: "he_IL",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {

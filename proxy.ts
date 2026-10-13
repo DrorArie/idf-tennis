@@ -53,6 +53,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Skip static files, app icons, the share image and the web app manifest (they must load without signing in)
+    '/((?!_next/static|_next/image|favicon.ico|icon$|apple-icon$|opengraph-image$|manifest\\.webmanifest$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

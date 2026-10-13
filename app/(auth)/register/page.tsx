@@ -23,21 +23,24 @@ export default function RegisterPage() {
     if (!f.service_type) return setError('יש לבחור סוג שירות')
 
     setLoading(true)
-    const { data, error: authError } = await supabase.auth.signUp({ email: f.email.trim(), password: f.password })
-    if (authError || !data.user) {
-      setError(authError?.message.includes('registered') ? 'כבר קיים חשבון עם האימייל הזה — נסה/י להתחבר' : 'ההרשמה נכשלה, נסה/י שוב')
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: f.email.trim(), password: f.password,
+        name: f.name, phone: f.phone, skill_level: f.skill_level, service_type: f.service_type,
+      }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'ההרשמה נכשלה, נסה/י שוב')
       setLoading(false)
       return
     }
 
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: f.name, phone: f.phone, skill_level: f.skill_level, service_type: f.service_type }),
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setError(body.error ?? 'שגיאה ביצירת הפרופיל')
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: f.email.trim(), password: f.password })
+    if (signInError) {
+      setError('החשבון נוצר — נא להתחבר')
       setLoading(false)
       return
     }

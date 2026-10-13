@@ -26,7 +26,7 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser()
   if (!user) return null
   const { data } = await createAdminClient()
-    .from('profiles')
+    .from('tennis_profiles')
     .select('id, name, phone, email, skill_level, service_type, is_admin, is_blacklisted, total_signups')
     .eq('id', user.id)
     .maybeSingle()

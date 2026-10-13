@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   const weekStart = getActiveWeekStart()
   const { error } = await createAdminClient()
-    .from('sessions')
+    .from('tennis_sessions')
     .update({ is_open: false })
     .eq('week_start', weekStart)
     .lte('closes_at', new Date().toISOString())

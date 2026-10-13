@@ -21,8 +21,8 @@ export default async function ProfilePage() {
 
   const [{ data }, skillLocked] = await Promise.all([
     createAdminClient()
-      .from('registrations')
-      .select('id, status, waitlist_position, sessions(time_slot, week_start, skill_level)')
+      .from('tennis_registrations')
+      .select('id, status, waitlist_position, sessions:tennis_sessions(time_slot, week_start, skill_level)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30),

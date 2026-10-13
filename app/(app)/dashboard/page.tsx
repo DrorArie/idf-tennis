@@ -10,7 +10,7 @@ import CompleteProfile from './CompleteProfile'
 
 async function loadWeek(weekStart: string) {
   const { data } = await createAdminClient()
-    .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
+    .from('tennis_sessions').select('*').eq('week_start', weekStart).order('time_slot')
   return (data ?? []) as SessionRow[]
 }
 
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   const session = sessions.find((s) => s.skill_level === profile.skill_level) ?? null
   const { data: regs } = session
     ? await createAdminClient()
-        .from('registrations').select('user_id, status, waitlist_position').eq('session_id', session.id)
+        .from('tennis_registrations').select('user_id, status, waitlist_position').eq('session_id', session.id)
     : { data: [] }
 
   const confirmed = (regs ?? []).filter((r) => r.status === 'confirmed').length

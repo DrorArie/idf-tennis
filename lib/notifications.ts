@@ -6,7 +6,7 @@ export async function createNotification(
   message: string,
 ): Promise<void> {
   try {
-    await supabase.from('notifications').insert({ user_id: userId, message })
+    await supabase.from('tennis_notifications').insert({ user_id: userId, message })
   } catch (err) {
     console.error('Notification creation failed:', err)
   }

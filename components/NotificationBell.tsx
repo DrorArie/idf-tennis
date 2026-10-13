@@ -23,7 +23,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   useEffect(() => {
     async function load() {
       const { data } = await supabase
-        .from('notifications')
+        .from('tennis_notifications')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -36,7 +36,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
       .channel(`notifications-${userId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        { event: 'INSERT', schema: 'public', table: 'tennis_notifications', filter: `user_id=eq.${userId}` },
         (payload) => setNotifications((prev) => [payload.new as Notification, ...prev])
       )
       .subscribe()
@@ -51,7 +51,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
     if (!open && unread > 0) {
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
       await supabase
-        .from('notifications')
+        .from('tennis_notifications')
         .update({ is_read: true })
         .eq('user_id', userId)
         .eq('is_read', false)

@@ -28,14 +28,14 @@ function weekRows(weekStart: string, closes: string | null) {
 
 async function upsertWeek(admin: SupabaseClient, weekStart: string, closes: string | null, keepExisting: boolean) {
   const opts = { onConflict: 'week_start,time_slot', ignoreDuplicates: keepExisting }
-  let { error } = await admin.from('sessions').upsert(weekRows(weekStart, closes), opts)
+  let { error } = await admin.from('tennis_sessions').upsert(weekRows(weekStart, closes), opts)
   if (missingClosesAt(error)) {
     const rows = weekRows(weekStart, closes).map((r) => {
       const row: Partial<typeof r> = { ...r }
       delete row.closes_at
       return row
     })
-    ;({ error } = await admin.from('sessions').upsert(rows, opts))
+    ;({ error } = await admin.from('tennis_sessions').upsert(rows, opts))
   }
   return error
 }
@@ -59,14 +59,14 @@ export async function adminOpenWeek(weekStart: string, now = new Date()) {
   const error = await upsertWeek(admin, weekStart, closes, true)
   if (error) return error
   // Re-open rows that already existed (upsert above skipped them)
-  let { error: updError } = await admin.from('sessions').update({ is_open: true, closes_at: closes }).eq('week_start', weekStart)
+  let { error: updError } = await admin.from('tennis_sessions').update({ is_open: true, closes_at: closes }).eq('week_start', weekStart)
   if (missingClosesAt(updError)) {
-    ;({ error: updError } = await admin.from('sessions').update({ is_open: true }).eq('week_start', weekStart))
+    ;({ error: updError } = await admin.from('tennis_sessions').update({ is_open: true }).eq('week_start', weekStart))
   }
   return updError
 }
 
 export async function closeWeek(weekStart: string) {
-  const { error } = await createAdminClient().from('sessions').update({ is_open: false }).eq('week_start', weekStart)
+  const { error } = await createAdminClient().from('tennis_sessions').update({ is_open: false }).eq('week_start', weekStart)
   return error
 }

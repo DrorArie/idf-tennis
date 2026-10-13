@@ -48,30 +48,32 @@ supabase/migrations/ — 001–003 schema history, 004 protect is_admin/is_black
 
 ## Database Schema
 
-### `profiles` (extends `auth.users`)
+Since Oct 2026 tennis lives in the shared Supabase project **Dror Apps** (`nukbnjncacuhvaounuyd`, also the matchmaker app's). All tables and functions are prefixed `tennis_` (created by migration 006; 001–005 are history from the old Tennis_IDF project). In code always use the `tennis_` names; embedded selects alias them (`profiles:tennis_profiles(...)`, `sessions:tennis_sessions(...)`).
+
+### `tennis_profiles` (extends `auth.users`)
 - `id`, `name`, `phone`, `email`, `skill_level`, `service_type`, `is_admin`, `is_blacklisted`, `total_signups`
 - `idf_number` — nullable, optional (no longer collected at registration)
 - `service_type` — `'keva'` (קבע) | `'ezrach'` (אזרח עובד צה"ל)
 - RLS: users see/edit own row; admins see/edit all
 
-### `sessions`
+### `tennis_sessions`
 - `id`, `week_start` (DATE), `time_slot` (TIME), `skill_level`, `capacity` (default 8), `is_open`
 - Unique on `(week_start, time_slot)`
 - `week_start` is always a **Tuesday** date
 
-### `registrations`
+### `tennis_registrations`
 - `id`, `session_id`, `user_id`, `status` (`confirmed` | `waitlist`), `waitlist_position`
 - Unique on `(session_id, user_id)`
 - No `pending_confirmation` status — waitlist promotion is fully automatic
 
-### `notifications`
+### `tennis_notifications`
 - `id`, `user_id`, `message`, `is_read`
 - Written by service role from API routes (not edge functions)
 
 ### DB Functions
-- `get_confirmed_counts(session_ids UUID[])` — batch confirmed count per session
-- `increment_total_signups(uid UUID)` — safely increments counter
-- `decrement_total_signups(uid UUID)` — safely decrements (floor 0)
+- `tennis_get_confirmed_counts(session_ids UUID[])` — batch confirmed count per session
+- `tennis_increment_total_signups(uid UUID)` — safely increments counter
+- `tennis_decrement_total_signups(uid UUID)` — safely decrements (floor 0)
 
 ---
 
@@ -118,8 +120,8 @@ Two channels fire together on waitlist events:
 
 ## Auth & Supabase Notes
 
-- Auth: Supabase email/password. No email confirmation required (disabled in Supabase settings).
-- Profile creation on register uses the **service role key** (bypasses RLS).
+- Auth: Supabase email/password, shared with Dror's other apps (one login). The shared project requires email confirmation, so `/api/register` creates the account server-side already confirmed (`admin.createUser`, `email_confirm: true`) with `user_metadata.signup_app = 'idf-tennis.vercel.app'` (keeps tennis people out of the matchmaker app's emails/stats), inserts the `tennis_profiles` row, then the page signs in.
+- Someone who already has a Dror account signs in with it; with no `tennis_profiles` row the dashboard shows CompleteProfile.
 - Server-side Supabase client: `lib/supabase/server.ts` (cookies via `@supabase/ssr`).
 - Cancel and signup APIs create a module-level admin client (`createClient` with `SUPABASE_SERVICE_ROLE_KEY`) for cross-user writes (promoting other users, notifying others).
 

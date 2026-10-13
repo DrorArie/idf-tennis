@@ -45,7 +45,7 @@ export async function updateProfileAction(_: ActionResult | null, formData: Form
     return { ok: false, error: 'כדי לשנות רמה, בטל/י קודם את ההרשמה לאימון השבוע' }
   }
 
-  const { error } = await createAdminClient().from('profiles').update({ name, phone, skill_level }).eq('id', profile.id)
+  const { error } = await createAdminClient().from('tennis_profiles').update({ name, phone, skill_level }).eq('id', profile.id)
   if (error) return { ok: false, error: 'השמירה נכשלה, נסה שוב' }
   refresh()
   return { ok: true, message: 'נשמר' }
@@ -65,7 +65,7 @@ export async function completeProfileAction(_: ActionResult | null, formData: Fo
     return { ok: false, error: 'נא למלא את כל השדות' }
   }
 
-  const { error } = await createAdminClient().from('profiles').insert({
+  const { error } = await createAdminClient().from('tennis_profiles').insert({
     id: user.id, name, phone, skill_level, service_type, email: user.email,
   })
   if (error) return { ok: false, error: 'השמירה נכשלה, נסה שוב' }

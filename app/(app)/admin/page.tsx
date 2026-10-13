@@ -24,7 +24,7 @@ interface SessionRow {
 
 async function loadWeek(weekStart: string) {
   const { data } = await createAdminClient()
-    .from('sessions').select('*').eq('week_start', weekStart).order('time_slot')
+    .from('tennis_sessions').select('*').eq('week_start', weekStart).order('time_slot')
   return (data ?? []) as SessionRow[]
 }
 
@@ -35,7 +35,7 @@ export default async function AdminPage() {
 
   const [initialSessions, { data: users }] = await Promise.all([
     loadWeek(weekStart),
-    admin.from('profiles')
+    admin.from('tennis_profiles')
       .select('id, name, phone, email, skill_level, service_type, total_signups, is_blacklisted, is_admin')
       .order('total_signups', { ascending: false }),
   ])
@@ -47,8 +47,8 @@ export default async function AdminPage() {
 
   const { data: regs } = sessions.length
     ? await admin
-        .from('registrations')
-        .select('session_id, user_id, status, waitlist_position, created_at, profiles(name, phone, total_signups)')
+        .from('tennis_registrations')
+        .select('session_id, user_id, status, waitlist_position, created_at, profiles:tennis_profiles(name, phone, total_signups)')
         .in('session_id', sessions.map((s) => s.id))
         .order('created_at', { ascending: true })
     : { data: [] }

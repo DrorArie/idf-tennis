@@ -50,7 +50,7 @@ export async function setUserFlagAction(
   if (!me) return DENIED
   if (userId === me.id) return { ok: false, error: 'אי אפשר לשנות את ההרשאות של עצמך' }
   if (flag !== 'is_blacklisted' && flag !== 'is_admin') return DENIED
-  const { error } = await createAdminClient().from('profiles').update({ [flag]: value }).eq('id', userId)
+  const { error } = await createAdminClient().from('tennis_profiles').update({ [flag]: value }).eq('id', userId)
   revalidatePath('/admin')
   return error ? { ok: false, error: 'השמירה נכשלה' } : { ok: true }
 }

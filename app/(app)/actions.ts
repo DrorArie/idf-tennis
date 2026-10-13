@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getProfile, getUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/sessions'
+import { checkIdfNumber } from '@/lib/idf'
 import { cancelRegistration, hasActiveRegistration, signUp, type ActionResult } from '@/lib/registrations'
 
 const SKILLS = ['beginner', 'amateur', 'expert_a', 'expert_b']
@@ -64,9 +65,11 @@ export async function completeProfileAction(_: ActionResult | null, formData: Fo
   if (!name || !phone || !SKILLS.includes(skill_level) || !SERVICES.includes(service_type)) {
     return { ok: false, error: 'נא למלא את כל השדות' }
   }
+  const idf = await checkIdfNumber(formData.get('idf_number'), user.id)
+  if ('error' in idf) return { ok: false, error: idf.error }
 
   const { error } = await createAdminClient().from('tennis_profiles').insert({
-    id: user.id, name, phone, skill_level, service_type, email: user.email,
+    id: user.id, name, phone, idf_number: idf.value, skill_level, service_type, email: user.email,
   })
   if (error) return { ok: false, error: 'השמירה נכשלה, נסה שוב' }
   refresh()

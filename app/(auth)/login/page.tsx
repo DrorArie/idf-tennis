@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Field, FormError, SubmitButton } from '@/components/Form'
+import GoogleButton from '@/components/GoogleButton'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
@@ -11,7 +12,9 @@ export default function LoginPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('reason') === 'blacklisted') {
+    const reason = new URLSearchParams(window.location.search).get('reason')
+    if (reason === 'oauth') setError('ההתחברות עם Google נכשלה, נסה/י שוב')
+    if (reason === 'blacklisted') {
       supabase.auth.signOut().then(() => setError('החשבון שלך נחסם. לפרטים פנה/י למנהל האימונים.'))
     }
   }, [supabase])
@@ -37,6 +40,8 @@ export default function LoginPage() {
   return (
     <div className="space-y-5">
       <h2 className="text-2xl font-bold">כניסה</h2>
+      <GoogleButton />
+      <div className="flex items-center gap-3 text-xs text-ink-soft"><span className="h-px flex-1 bg-line" />או עם אימייל<span className="h-px flex-1 bg-line" /></div>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <FormError>{error}</FormError>}
         <Field label="אימייל" name="email" type="email" autoComplete="email" required dir="ltr" className="text-right" />

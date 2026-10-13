@@ -16,7 +16,7 @@ async function loadWeek(weekStart: string) {
 
 export default async function DashboardPage() {
   const { user, profile } = await requireMember()
-  if (!profile) return <CompleteProfile email={user.email ?? ''} />
+  if (!profile) return <CompleteProfile email={user.email ?? ''} name={user.user_metadata?.full_name ?? user.user_metadata?.name ?? ''} />
 
   const weekStart = getActiveWeekStart()
   let sessions = await loadWeek(weekStart)

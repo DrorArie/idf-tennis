@@ -34,7 +34,7 @@ export async function proxy(request: NextRequest) {
   // API routes handle their own auth (cron uses CRON_SECRET, others return 401)
   if (pathname.startsWith('/api/')) return supabaseResponse
 
-  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password']
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback']
   const isPublic = publicRoutes.some((r) => pathname.startsWith(r))
 
   if (!user && !isPublic) {

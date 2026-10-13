@@ -122,6 +122,7 @@ Two channels fire together on waitlist events:
 
 - Auth: Supabase email/password, shared with Dror's other apps (one login). The shared project requires email confirmation, so `/api/register` creates the account server-side already confirmed (`admin.createUser`, `email_confirm: true`) with `user_metadata.signup_app = 'idf-tennis.vercel.app'` (keeps tennis people out of the matchmaker app's emails/stats), inserts the `tennis_profiles` row, then the page signs in.
 - Someone who already has a Dror account signs in with it; with no `tennis_profiles` row the dashboard shows CompleteProfile.
+- Google sign-in: `components/GoogleButton.tsx` → `/auth/callback` (tags brand-new accounts with signup_app) → dashboard → CompleteProfile asks for the personal number (מספר אישי, 7–8 digits, unique — `lib/idf.ts`), phone, level, service type. Email sign-up asks for it too.
 - Server-side Supabase client: `lib/supabase/server.ts` (cookies via `@supabase/ssr`).
 - Cancel and signup APIs create a module-level admin client (`createClient` with `SUPABASE_SERVICE_ROLE_KEY`) for cross-user writes (promoting other users, notifying others).
 

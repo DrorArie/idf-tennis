@@ -49,7 +49,7 @@ export function StatusCard({
   waiting: number
   weekStart: string
 }) {
-  const card = 'rounded-[24px] bg-white border border-line p-5'
+  const card = 'rounded-[24px] bg-card border border-line p-5'
 
   if (session && mine?.status === 'confirmed') {
     return (
@@ -158,7 +158,7 @@ export function WeekTimeline({ weekStart, session, state }: { weekStart: string;
   const current = steps.findIndex((s) => !s.done)
 
   return (
-    <ol className="rounded-[24px] bg-white border border-line px-5 py-4">
+    <ol className="rounded-[24px] bg-card border border-line px-5 py-4">
       {steps.map((s, i) => (
         <li key={s.label} className="relative flex items-center gap-3 py-2">
           {i < steps.length - 1 && (
@@ -166,7 +166,7 @@ export function WeekTimeline({ weekStart, session, state }: { weekStart: string;
           )}
           <span
             className={`relative w-4 h-4 rounded-full shrink-0 border-2 ${
-              s.done ? 'bg-court border-court' : i === current ? 'bg-ball border-court' : 'bg-white border-line'
+              s.done ? 'bg-court border-court' : i === current ? 'bg-ball border-court' : 'bg-card border-line'
             }`}
           />
           <span className={`flex-1 ${i === current ? 'font-semibold' : s.done ? 'text-ink-soft' : ''}`}>{s.label}</span>

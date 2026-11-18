@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
       <div className="text-center space-y-3 py-4">
         <h2 className="text-xl font-bold">הקישור כבר לא בתוקף</h2>
         <p className="text-ink-soft text-sm">קישור האיפוס פג תוקף או שכבר השתמשו בו.</p>
-        <a href="/forgot-password" className="inline-block text-sm font-semibold text-court hover:underline">שליחת קישור חדש</a>
+        <a href="/forgot-password" className="inline-block text-sm font-semibold text-court-ink hover:underline">שליחת קישור חדש</a>
       </div>
     )
   }

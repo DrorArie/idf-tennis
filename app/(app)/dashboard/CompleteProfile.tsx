@@ -7,7 +7,7 @@ import { SERVICE_OPTIONS, SKILL_OPTIONS } from '@/lib/options'
 export default function CompleteProfile({ email, name = '' }: { email: string; name?: string }) {
   const [state, formAction] = useActionState(completeProfileAction, null)
   return (
-    <form action={formAction} className="rounded-[24px] bg-white border border-line p-6 space-y-4 animate-rise">
+    <form action={formAction} className="rounded-[24px] bg-card border border-line p-6 space-y-4 animate-rise">
       <div>
         <h2 className="text-2xl font-bold">עוד רגע מסיימים</h2>
         <p className="text-ink-soft text-sm mt-1">מחובר/ת בתור {email}. מלא/י את הפרטים הצבאיים כדי להתחיל.</p>

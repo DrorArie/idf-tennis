@@ -54,7 +54,7 @@ export default async function ProfilePage() {
         </div>
       </section>
 
-      <section className="rounded-[24px] bg-white border border-line p-5 animate-rise" style={{ animationDelay: '60ms' }}>
+      <section className="rounded-[24px] bg-card border border-line p-5 animate-rise" style={{ animationDelay: '60ms' }}>
         <h2 className="text-lg font-bold mb-4">הפרטים שלי</h2>
         <ProfileForm
           name={profile.name}
@@ -65,7 +65,7 @@ export default async function ProfilePage() {
         />
       </section>
 
-      <section className="rounded-[24px] bg-white border border-line overflow-hidden animate-rise" style={{ animationDelay: '120ms' }}>
+      <section className="rounded-[24px] bg-card border border-line overflow-hidden animate-rise" style={{ animationDelay: '120ms' }}>
         <h2 className="text-lg font-bold px-5 pt-5 pb-3">ההרשמות שלי</h2>
         {history.length === 0 ? (
           <p className="text-ink-soft text-sm px-5 pb-6">עדיין לא נרשמת לאף אימון.</p>
@@ -91,7 +91,7 @@ export default async function ProfilePage() {
       </section>
 
       <form action={signOutAction}>
-        <button type="submit" className="w-full rounded-2xl border-2 border-line py-3 text-ink-soft font-medium hover:bg-white transition-colors cursor-pointer">
+        <button type="submit" className="w-full rounded-2xl border-2 border-line py-3 text-ink-soft font-medium hover:bg-card transition-colors cursor-pointer">
           התנתקות
         </button>
       </form>
@@ -117,7 +117,7 @@ function StatusPill({ status, position, past }: { status: string; position: numb
     )
   }
   return (
-    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-wait/15 text-[#a87412]">
+    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-wait/15 text-[#a87412] dark:text-[#f0c060]">
       {past ? 'לא נכנסת' : `המתנה #${position}`}
     </span>
   )

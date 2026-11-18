@@ -2,7 +2,7 @@
 import { useFormStatus } from 'react-dom'
 
 const inputClass =
-  'w-full rounded-2xl border-2 border-line bg-white px-4 py-3 text-base outline-none transition-colors focus:border-court disabled:bg-chalk disabled:text-ink-soft'
+  'w-full rounded-2xl border-2 border-line bg-card px-4 py-3 text-base outline-none transition-colors focus:border-court disabled:bg-chalk disabled:text-ink-soft'
 
 interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string

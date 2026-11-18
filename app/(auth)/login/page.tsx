@@ -49,8 +49,8 @@ export default function LoginPage() {
         <SubmitButton pendingLabel="מתחבר…" pending={loading}>כניסה</SubmitButton>
       </form>
       <div className="flex items-center justify-between text-sm">
-        <a href="/forgot-password" className="text-ink-soft hover:text-court">שכחתי סיסמה</a>
-        <a href="/register" className="font-semibold text-court hover:underline">משתמש/ת חדש/ה? הרשמה</a>
+        <a href="/forgot-password" className="text-ink-soft hover:text-court-ink">שכחתי סיסמה</a>
+        <a href="/register" className="font-semibold text-court-ink hover:underline">משתמש/ת חדש/ה? הרשמה</a>
       </div>
     </div>
   )

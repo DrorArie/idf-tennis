@@ -17,7 +17,7 @@ interface Props {
 const VARIANTS = {
   primary: 'bg-court text-white hover:bg-court-deep shadow-[0_6px_0_0_var(--color-court-night)] active:shadow-none active:translate-y-[6px]',
   ball: 'bg-ball text-court-night hover:bg-ball-deep shadow-[0_6px_0_0_var(--color-ball-deep)] active:shadow-none active:translate-y-[6px]',
-  danger: 'bg-white text-fault border-2 border-fault/25 hover:border-fault/60 hover:bg-fault/5',
+  danger: 'bg-card text-fault border-2 border-fault/25 hover:border-fault/60 hover:bg-fault/5',
   ghost: 'bg-white/10 text-white border border-white/25 hover:bg-white/20',
   quiet: 'bg-chalk text-ink-soft hover:bg-line',
 }

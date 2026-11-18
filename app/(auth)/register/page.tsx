@@ -74,7 +74,7 @@ export default function RegisterPage() {
               type="button"
               onClick={() => setShowServiceInfo((v) => !v)}
               aria-label="מי יכול להירשם"
-              className="w-5 h-5 rounded-full bg-court/10 text-court text-xs font-bold grid place-items-center hover:bg-court/20 cursor-pointer"
+              className="w-5 h-5 rounded-full bg-court/10 text-court-ink text-xs font-bold grid place-items-center hover:bg-court/20 cursor-pointer"
             >
               !
             </button>
@@ -91,7 +91,7 @@ export default function RegisterPage() {
         <SubmitButton pendingLabel="יוצר חשבון…" pending={loading}>יצירת חשבון</SubmitButton>
       </form>
       <p className="text-sm text-center text-ink-soft">
-        כבר יש לך חשבון? <a href="/login" className="font-semibold text-court hover:underline">כניסה</a>
+        כבר יש לך חשבון? <a href="/login" className="font-semibold text-court-ink hover:underline">כניסה</a>
       </p>
     </div>
   )

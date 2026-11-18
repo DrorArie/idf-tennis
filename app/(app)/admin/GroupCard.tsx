@@ -57,9 +57,9 @@ export default function GroupCard({ session, dateLabel, people }: Props) {
   const full = confirmed.length >= session.capacity
 
   return (
-    <div className="rounded-[24px] bg-white border border-line overflow-hidden">
+    <div className="rounded-[24px] bg-card border border-line overflow-hidden">
       <div className="flex items-center gap-4 p-4">
-        <p className="font-display font-bold text-5xl leading-none text-court-deep w-24 shrink-0" dir="ltr">{session.time}</p>
+        <p className="font-display font-bold text-5xl leading-none text-court-deep-ink w-24 shrink-0" dir="ltr">{session.time}</p>
         <div className="flex-1 min-w-0">
           <p className="font-bold">{SKILL_NAME[session.skill]}</p>
           <p className={`text-sm ${full ? 'text-fault font-medium' : 'text-ink-soft'}`}>
@@ -89,7 +89,7 @@ export default function GroupCard({ session, dateLabel, people }: Props) {
 
       {waiting.length > 0 && (
         <>
-          <p className="px-4 py-2 text-xs font-semibold text-[#a87412] bg-wait/10 border-t border-wait/20">רשימת המתנה</p>
+          <p className="px-4 py-2 text-xs font-semibold text-[#a87412] dark:text-[#f0c060] bg-wait/10 border-t border-wait/20">רשימת המתנה</p>
           <ul>
             {waiting.map((p) => (
               <PersonRow key={p.user_id} person={p} index={`#${p.waitlist_position}`} sessionId={session.id} waiting />
@@ -116,7 +116,7 @@ function StepButton({ onClick, disabled, label }: { onClick: () => void; disable
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-9 h-9 rounded-xl bg-white border-2 border-line text-lg font-bold hover:border-court disabled:opacity-40 transition-colors cursor-pointer"
+      className="w-9 h-9 rounded-xl bg-card border-2 border-line text-lg font-bold hover:border-court disabled:opacity-40 transition-colors cursor-pointer"
     >
       {label}
     </button>
@@ -131,7 +131,7 @@ function PersonRow({ person, index, sessionId, waiting = false }: { person: Pers
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{person.profiles?.name}</p>
         {phone && (
-          <a href={`tel:${phone}`} className="text-xs text-court hover:underline" dir="ltr">{phone}</a>
+          <a href={`tel:${phone}`} className="text-xs text-court-ink hover:underline" dir="ltr">{phone}</a>
         )}
       </div>
       <span className="text-xs text-ink-soft">{person.profiles?.total_signups ?? 0} אימונים</span>

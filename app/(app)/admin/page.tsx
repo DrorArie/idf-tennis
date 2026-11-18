@@ -71,7 +71,7 @@ export default async function AdminPage() {
   return (
     <div className="space-y-5">
       <div className="animate-rise">
-        <h1 className="font-display font-bold text-5xl leading-none text-court-deep">לוח ניהול</h1>
+        <h1 className="font-display font-bold text-5xl leading-none text-court-deep-ink">לוח ניהול</h1>
         <p className="text-ink-soft mt-1">אימון {formatLongDate(exerciseDay(weekStart))}</p>
       </div>
 
@@ -98,7 +98,7 @@ export default async function AdminPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-bold">קבוצות</h2>
         {sessions.length === 0 ? (
-          <p className="rounded-[24px] bg-white border border-line p-6 text-center text-ink-soft">
+          <p className="rounded-[24px] bg-card border border-line p-6 text-center text-ink-soft">
             האימונים לשבוע הזה עדיין לא נוצרו.
           </p>
         ) : (

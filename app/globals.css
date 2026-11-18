@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Hard-court palette: court blue, white lines, optic-yellow ball, chalk background */
 @theme {
   --color-court: #1a4f8b;
@@ -8,6 +10,9 @@
   --color-ball: #d9f24b;
   --color-ball-deep: #b8d12a;
   --color-chalk: #f4f2ec;
+  --color-card: #ffffff;
+  --color-court-ink: #1a4f8b;
+  --color-court-deep-ink: #0f2f57;
   --color-ink: #0c1a2b;
   --color-ink-soft: #4a5a6e;
   --color-line: #e3e0d6;
@@ -40,6 +45,36 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+:root {
+  color-scheme: light;
+  --skeleton-a: #e9e6dd;
+  --skeleton-b: #f3f1ea;
+  --placeholder: #9aa3ae;
+}
+
+/* Night session: deep court-navy surfaces, same court blue + optic-yellow accents */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-court: #2a66ad;
+  --color-court-deep: #0f2f57;
+  --color-court-night: #081a31;
+  --color-ball: #d9f24b;
+  --color-ball-deep: #b8d12a;
+  --color-chalk: #0d1520;
+  --color-card: #162130;
+  --color-court-ink: #8fbcf0;
+  --color-court-deep-ink: #d3e3f7;
+  --color-ink: #ece8df;
+  --color-ink-soft: #a3afbd;
+  --color-line: #2a3748;
+  --color-win: #3cc47e;
+  --color-wait: #f0b43a;
+  --color-fault: #f06a5f;
+  --skeleton-a: #172231;
+  --skeleton-b: #1f2c3d;
+  --placeholder: #6f7c8c;
+}
+
 body {
   background: var(--color-chalk);
   color: var(--color-ink);
@@ -55,7 +90,7 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #e9e6dd 0%, #f3f1ea 50%, #e9e6dd 100%);
+  background: linear-gradient(90deg, var(--skeleton-a) 0%, var(--skeleton-b) 50%, var(--skeleton-a) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.3s linear infinite;
   border-radius: 0.75rem;
@@ -72,12 +107,15 @@ body {
   background-size: 12px;
   background-position: left 1rem center;
 }
+:root[data-theme="dark"] .select-chevron {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23a3afbd' stroke-width='1.8'/></svg>");
+}
 
 input, select, textarea {
   color: var(--color-ink);
 }
 input::placeholder {
-  color: #9aa3ae;
+  color: var(--placeholder);
 }
 
 @media (prefers-reduced-motion: reduce) {

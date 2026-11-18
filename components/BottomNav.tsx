@@ -17,7 +17,7 @@ export default function BottomNav({ isAdmin }: { isAdmin: boolean }) {
   ]
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] bg-white/90 backdrop-blur border-t border-line">
+    <nav className="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] bg-card/90 backdrop-blur border-t border-line">
       <div className="max-w-lg mx-auto flex justify-around px-2 py-1.5">
         {items.map(({ href, label, icon }) => {
           const active = pathname.startsWith(href)
@@ -26,7 +26,7 @@ export default function BottomNav({ isAdmin }: { isAdmin: boolean }) {
               key={href}
               href={href}
               className={`relative flex flex-col items-center gap-0.5 px-6 py-1.5 rounded-2xl transition-colors ${
-                active ? 'text-court' : 'text-ink-soft/70 hover:text-ink'
+                active ? 'text-court-ink' : 'text-ink-soft/70 hover:text-ink'
               }`}
             >
               {active && <span className="absolute inset-0 bg-court/8 rounded-2xl" />}

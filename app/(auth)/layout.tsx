@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <p className="text-ball font-medium mt-2">אימון טניס שבועי · כל יום שישי</p>
       </div>
 
-      <div className="relative w-full max-w-md bg-white rounded-[28px] shadow-2xl shadow-black/30 p-7 animate-rise" style={{ animationDelay: '80ms' }}>
+      <div className="relative w-full max-w-md bg-card rounded-[28px] shadow-2xl shadow-black/30 p-7 animate-rise" style={{ animationDelay: '80ms' }}>
         {children}
       </div>
     </main>

@@ -31,7 +31,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f2f57",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0f2f57" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f2f57" },
+  ],
 };
 
 export default function RootLayout({
@@ -40,7 +43,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className={`${rubik.variable} ${karantina.variable} h-full antialiased`}>
+    <html lang="he" dir="rtl" className={`${rubik.variable} ${karantina.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){var e=document.documentElement;function n(){var t=new Date(),r=Math.PI/180,g=2*Math.PI/365*(Math.floor((t-new Date(t.getFullYear(),0,0))/864e5)-1),q=229.18*(75e-6+.001868*Math.cos(g)-.032077*Math.sin(g)-.014615*Math.cos(2*g)-.040849*Math.sin(2*g)),d=.006918-.399912*Math.cos(g)+.070257*Math.sin(g)-.006758*Math.cos(2*g)+907e-6*Math.sin(2*g)-.002697*Math.cos(3*g)+.00148*Math.sin(3*g),l=31.8*r,h=Math.acos(Math.cos(90.833*r)/(Math.cos(l)*Math.cos(d))-Math.tan(l)*Math.tan(d))/r,m=t.getUTCHours()*60+t.getUTCMinutes();return m<579-4*h-q||m>579+4*h-q}function a(){var t="auto";try{t=localStorage.getItem("drorTheme")||"auto"}catch(x){}var d=t==="dark"||(t==="auto"&&n());e.setAttribute("data-theme",d?"dark":"light");e.style.colorScheme=d?"dark":"light"}a();setInterval(a,3e5)})()',
+          }}
+        />
+      </head>
       <body className="min-h-full">
         {children}
         <Script src="https://dror-apps.vercel.app/menu.js" strategy="afterInteractive" />

@@ -78,8 +78,8 @@ export default function NotificationBell({ userId }: { userId: string }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div dir="rtl" className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-white text-ink rounded-2xl shadow-2xl shadow-court-night/20 border border-line z-50 max-h-[70vh] overflow-y-auto animate-pop origin-top-right">
-            <div className="px-4 py-3 border-b border-line sticky top-0 bg-white/95 backdrop-blur">
+          <div dir="rtl" className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-card text-ink rounded-2xl shadow-2xl shadow-court-night/20 border border-line z-50 max-h-[70vh] overflow-y-auto animate-pop origin-top-right">
+            <div className="px-4 py-3 border-b border-line sticky top-0 bg-card/95 backdrop-blur">
               <p className="font-semibold">התראות</p>
             </div>
             {notifications.length === 0 ? (

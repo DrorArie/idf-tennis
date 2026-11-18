@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
         </div>
         <h2 className="text-2xl font-bold">בדוק/י את תיבת המייל</h2>
         <p className="text-ink-soft text-sm">שלחנו קישור לאיפוס הסיסמה אל <span className="font-medium text-ink" dir="ltr">{sentTo}</span></p>
-        <a href="/login" className="inline-block text-sm font-semibold text-court hover:underline pt-2">חזרה לכניסה</a>
+        <a href="/login" className="inline-block text-sm font-semibold text-court-ink hover:underline pt-2">חזרה לכניסה</a>
       </div>
     )
   }
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         <SubmitButton pendingLabel="שולח…" pending={loading}>שליחת קישור</SubmitButton>
       </form>
       <p className="text-sm text-center">
-        <a href="/login" className="text-ink-soft hover:text-court">חזרה לכניסה</a>
+        <a href="/login" className="text-ink-soft hover:text-court-ink">חזרה לכניסה</a>
       </p>
     </div>
   )
